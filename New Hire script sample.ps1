@@ -111,15 +111,15 @@ Function AD-Account {
                         -Description $args[8]  `
                         -Title $args[8]`
                         -Department $args[9] `
-                        -Company "PKF O'Connor Davies" `
-                        -HomePage "www.pkfod.com" -EmployeeID $args[10] 
+                        -Company "company" `
+                        -HomePage "www.company.com" -EmployeeID $args[10] 
 
                     $Success = $True
                 }
                 catch {
                     # Increase count by 1
                     $TryCount++                    
-                    $Error | Out-File '\\pkfod-automate\C$\temp\NewUserErrorLog.txt' -Append
+                    $Error | Out-File '\\company-automate\C$\temp\NewUserErrorLog.txt' -Append
                 }
                
             }
@@ -199,25 +199,25 @@ Function Set-LogonScript {
     # Use switch statement to select the logon script based on the office
     switch ($NewHire.office) {
         # Assign office specific logon scripts
-        "NJ - Woodcliff Lake" { $LogonScript = 'logon_nj-65.bat' } # NJ - Woodcliff Lake office
-        "NJ - Cranford" { $LogonScript = 'logon-65-cr.bat' } # NJ - Cranford office or Clear Thinking
-        "international" { $LogonScript = 'logon-65-India.bat' } # ID - Mumbai office
-        "NY - Hauppauge" { $LogonScript = 'logon-65-HAP.bat' } # NY - Hauppauge office
-        "NY - Newburgh" { $LogonScript = 'logon-65-NB.bat' } # NY - Newburgh office
-        "CT - Shelton" { $LogonScript = 'logon-SHL.bat' } # CT - Shelton office
-        "NJ - LBG" { $LogonScript = 'logon_LBG-65.bat' } # NJ - LBG office
-        "RI - Providence" { $LogonScript = 'logon-65-BFMM.bat' } # RI - Providence office
-        "NY - Middletown" { $LogonScript = 'logon_jgs-65.bat' } # NY - Middletown office
-        "MD - Bethesda" { $LogonScript = 'logon-65-md.bat' } # MD - Bethesda office
-        "CT - Wethersfield" { $LogonScript = 'logon_wo-65.bat' } # CT - Wethersfield office
+        "Location" { $LogonScript = 'logon_nj-65.bat' } 
+        "Location" { $LogonScript = 'logon-65-cr.bat' } 
+        "Location" { $LogonScript = 'logon-65-India.bat' } 
+        "Location" { $LogonScript = 'logon-65-HAP.bat' } 
+        "Location" { $LogonScript = 'logon-65-NB.bat' } 
+        "Location" { $LogonScript = 'logon-SHL.bat' } 
+        "Location" { $LogonScript = 'logon_LBG-65.bat' } 
+        "Location" { $LogonScript = 'logon-65-BFMM.bat' } 
+        "Location" { $LogonScript = 'logon_jgs-65.bat' } 
+        "MLocation" { $LogonScript = 'logon-65-md.bat' } 
+        "Location" { $LogonScript = 'logon_wo-65.bat' } 
 
         # NJ - Woodcliff Lake
         # those twp logon scripts are assign to the same office. We need to know what is the difference
-        "NJ - Woodcliff Lake" { $LogonScript = 'logon_nj-65.bat' }
+        "Location" { $LogonScript = 'logon_nj-65.bat' }
 
         # NY - NYC
         # those twp logon scripts are assign to the same office. We need to know what is the difference
-        "NY - NYC" { $LogonScript = 'TAX-65.bat' }
+        "Location" { $LogonScript = 'TAX-65.bat' }
 
         # Assign default logon scripts where there is no match
         "" { $LogonScript = 'logon-65-mktg.bat' } # No office provided, assign marketing logon script
@@ -241,22 +241,22 @@ Function Get-OU {
         
     )
     switch ($NewHire.City) {
-        "New York" { $OU = 'OU=NYC,OU=ODMD,DC=odmd,DC=local' ; }
-        "Shelton" { $OU = "OU=Shelton,OU=ODMD,DC=odmd,DC=local" ; }
-        "Stamford" { $OU = "OU=Stamford,OU=ODMD,DC=odmd,DC=local" ; }
-        "Cranford" { $OU = "OU=Cranford,OU=ODMD,DC=odmd,DC=local" ; }
-        "Bethesda" { $OU = "OU=Bethesda,OU=ODMD,DC=odmd,DC=local" ; }
-        "Hauppauge" { $OU = "OU=Hauppauge,OU=ODMD,DC=odmd,DC=local" ; }
-        "Boston" { $OU = "OU=Boston,OU=DGC,OU=ODMD,DC=odmd,DC=local" ; }
-        "Woburn" { $OU = "OU=Woburn,OU=DGC,OU=ODMD,DC=odmd,DC=local" ; }
-        "Middletown" { $OU = "OU=Middletown,OU=ODMD,DC=odmd,DC=local" ; }
-        "Providence" { $OU = "OU=Providence,OU=ODMD,DC=odmd,DC=local" ; }
-        "Poughkeepsie" { $OU = "OU=Poughkeepsie,OU=ODMD,DC=odmd,DC=local" ; }
-        "Harrison" { $OU = "OU=Harrison,OU=ODMD,DC=odmd,DC=local" ; }
-        "Wethersfield" { $OU = "OU=Wethersfield,OU=ODMD,DC=odmd,DC=local" ; }
-        "Newburgh" { $OU = "OU=Newburgh,OU=ODMD,DC=odmd,DC=local" ; }
-        "Mumbai" { $OU = "OU=OPSEU,OU=Opseu-Outside users,OU=OPSEU-Family Office,OU=ODMD,DC=odmd,DC=local" ; }
-        default { $OU = 'OU=NYC,OU=ODMD,DC=odmd,DC=local' }
+        "Location" { $OU = 'OU' ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OUl" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU" ; }
+        "Location" { $OU = "OU"; }
+        "Location" { $OU = "OU" ; }
+        default { $OU = 'OU' }
     }
 
     # Exections, in case the user should be on a different OU regarless of the location
@@ -283,28 +283,28 @@ function AD-Office {
 
     switch ($Location) {
         # New York State
-        { "Newburgh", "Middletown", "Poughkeepsie", "Harrison" -eq $_ } { $Office = "NY - $Location" }
+        { "Location", "Location", "Location", "Location" -eq $_ } { $Office = "NY - $Location" }
 
         # New Jersey State
-        { "Cranford", "Hauppauge", "Woodcliff Lake" -eq $_ } { $Office = "NJ - $Location" }
+        { "Location", "Location", "Location" -eq $_ } { $Office = "NJ - $Location" }
 
         # Massachusetts State
-        { "Boston", "Woburn" -eq $_ } { $Office = "MA - $Location" }
+        { "Boston", "Location" -eq $_ } { $Office = "MA - $Location" }
 
         # Connecticut State
-        { "Shelton", "Stamford", "Wethersfield" -eq $_ } { $Office = "CT - $Location" }
+        { "Location", "Location", "Wethersfield" -eq $_ } { $Office = "CT - $Location" }
 
         # Maryland State
-        { "Bethesda" -eq $_ } { $Office = "MD - $Location" }
+        { "Location" -eq $_ } { $Office = "MD - $Location" }
 
         # Rhode Island
-        { "Providence" -eq $_ } { $Office = "RI - $Location" }
+        { "Location" -eq $_ } { $Office = "RI - $Location" }
 
         #International
-        { "South Africa", "Mumbai", "Philippines" -eq $_ } { $Office = "international" }
+        { "Location", "Location", "Location" -eq $_ } { $Office = "international" }
 
         # Default
-        default { $Office = "NY - NYC" }
+        default { $Office = "NY - Location" }
     }
 
     # Output 
