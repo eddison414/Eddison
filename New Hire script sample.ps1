@@ -7,6 +7,7 @@ It is essential to understand that due to these customizations, the script is no
 We advise against using this script in any IT setting other than the one it was specifically created for. If you have any questions or require further clarification, please do not hesitate to reach out.
 #>﻿
 
+
 # ----------------------------------[     Install required modules     ]-------------------------------------
 Function required-Modules {
     <#
