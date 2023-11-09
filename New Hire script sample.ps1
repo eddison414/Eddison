@@ -1,6 +1,10 @@
 ﻿
 <#
-Important: this is a sample script. it was created to work on an spesifict IT enviroment. Please do not use in your inviroment. it will not work.
+Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been customized to align with the specific requirements and configurations of our system. Consequently, the script contains domain-specific information that has been adapted to suit our environment.
+
+It is essential to understand that due to these customizations, the script is not designed for universal application. Attempting to implement it in a different IT environment may not yield the intended results and could potentially lead to system incompatibilities or operational issues.
+
+We advise against using this script in any IT setting other than the one it was specifically created for. If you have any questions or require further clarification, please do not hesitate to reach out.
 #>﻿
 
 # ----------------------------------[     Install required modules     ]-------------------------------------
