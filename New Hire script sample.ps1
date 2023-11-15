@@ -1,6 +1,6 @@
 ﻿
 <#
-Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been customized to align with the specific requirements and configurations of our system. Consequently, the script contains domain-specific information that has been adapted to suit our environment.
+Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been customized to align with the specific requirements and configurations of our system. Consequently, the script contains domain-specific information that has been adapted to suit one environment.
 
 It is essential to understand that due to these customizations, the script is not designed for universal application. Attempting to implement it in a different IT environment may not yield the intended results and could potentially lead to system incompatibilities or operational issues.
 
@@ -60,24 +60,24 @@ $prem = New-Object System.Management.Automation.PsCredential("automation", $encr
 $Cloud = New-Object System.Management.Automation.PsCredential("Account", $encrypted)
 
 #Connect
-Connect-PnPOnline -Url "https://ocdcrm.sharepoint.com/sites/DGCCPAClassic/IT" -Credentials $Cloud
-Initialize-iPilotSession -ApiKey 'auwpy2oQeK5KUYXvJAhid1ekgi8GrfesaC1qn0uy' -Credential $Cloud
+Connect-PnPOnline -Url "Name" -Credentials $Cloud
+Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
 Connect-MsolService -Credential $Cloud
 Connect-ExchangeOnline -Credential $Cloud
 Connect-AzureAD -Credential $Cloud
 Connect-MicrosoftTeams -Credential $Cloud
 
 #Test for connection making sure at least 1 of the DCs is online
-$Connection = Test-Connection -ComputerName 'HA-DC1'
-IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'HA-DC1' -Credential $prem }
+$Connection = Test-Connection -ComputerName 'Name'
+IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
 IF (!($Connection)) {
-    $Connection = Test-Connection -ComputerName 'PKF-EIP-DC1.odmd.local'
-    IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'HA-DC1' -Credential $prem }
+    $Connection = Test-Connection -ComputerName 'name'
+    IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
 }
-IF (!($Connection)) { $PSSessionDC1 = New-PSSession -ComputerName 'NYM-DC1' -Credential $prem }
+IF (!($Connection)) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
 
 
-$ichannel = New-PSSession -ComputerName 'Ichannel' -Credential $prem
+$ichannel = New-PSSession -ComputerName 'name' -Credential $prem
     
 # ----------------------------------[     Functions     ]-------------------------------------
   
@@ -261,11 +261,11 @@ Function Get-OU {
 
     # Exections, in case the user should be on a different OU regarless of the location
     <# switch ($NewHire.Department) {
-        "IT" { $OU = "OU=Group IT,OU=ODMD,DC=odmd,DC=local" ; break }
-        "finance" { $OU = "OU=Financial Services,OU=ODMD,DC=odmd,DC=local" }
-        "Family Office" { $OU = "OU=Family Office,OU=ODMD,DC=odmd,DC=local" }
-        "Elite Accounting" { $OU = "OU=Emmaus,OU=ODMD,DC=odmd,DC=local" }
-        "Clear thinking" { $OU = "OU=Clear Thinking,OU=ODMD,DC=odmd,DC=local" }
+        "name" { $OU = "OU=Group IT,OU=ODMD,DC=odmd,DC=local" ; break }
+        "name" { $OU = "OU=Financial Services,OU=ODMD,DC=odmd,DC=local" }
+        "name" { $OU = "OU=Family Office,OU=ODMD,DC=odmd,DC=local" }
+        "name" { $OU = "OU=Emmaus,OU=ODMD,DC=odmd,DC=local" }
+        "name" { $OU = "OU=Clear Thinking,OU=ODMD,DC=odmd,DC=local" }
     }
     #>
 
@@ -292,7 +292,7 @@ function AD-Office {
         { "Boston", "Location" -eq $_ } { $Office = "MA - $Location" }
 
         # Connecticut State
-        { "Location", "Location", "Wethersfield" -eq $_ } { $Office = "CT - $Location" }
+        { "Location", "Location", "Location" -eq $_ } { $Office = "CT - $Location" }
 
         # Maryland State
         { "Location" -eq $_ } { $Office = "MD - $Location" }
@@ -365,7 +365,7 @@ Function Waitfor-sycn {
 
             # If the count was to 10 killswitch  the AD Account
             if ($TryCount -eq 10) {
-                Remove-ADUser -Server 'HA-DC1' -Identity $Username -confirm:$false; Clear-Variable $NewHire
+                Remove-ADUser -Server 'Name' -Identity $Username -confirm:$false; Clear-Variable $NewHire
                 Write-Color -Text "The script has done ", "$TryCount ", "tries to find the new hire: ", "$Username", " in the cloud.", "The AD Account will be deleted", " And the script will try again tomorrow" `
                     -Color White, Yellow, White, Green, White, Red, White
                 
@@ -505,7 +505,7 @@ Function Waitfor-Mailbox {
         catch {
             # If the count was to 10 killswitch  the AD Account
             if ($TryCount -eq 10) {
-                Remove-ADUser -Server 'HA-DC1' -Identity $Username -confirm:$false; Clear-Variable $NewHire
+                Remove-ADUser -Server 'name' -Identity $Username -confirm:$false; Clear-Variable $NewHire
                 Write-Color -Text "The script has done ", "$TryCount ", "tries to find the new hire: ", "$Username", " in the cloud.", "The AD Account will be deleted", " And the script will try again tomorrow" `
                     -Color White, Yellow, White, Green, White, Red, White
                 
@@ -623,161 +623,161 @@ and also the switch statement does not cover all states.
     $Location = (Get-ADUser -Identity $Username -Properties office -Server HA-DC1).office
 
     switch ($Location) {
-        # New York State
-        "NY - NYC" {
-            # NY - NYC
-            $StreetAddress = '245 Park Avenue, 12th Floor'     
-            $City = 'New York' 
-            $State = 'NY' 
-            $Zip = '10167' 
-            $FromtDesk = '212.286.2600'
+        # Location
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location' 
+            $State = 'Location' 
+            $Zip = 'Location' 
+            $FromtDesk = 'Location'
             ; break
         }
-        "NY - Newburgh" {
-            # NY - Newburgh
-            $StreetAddress = '32 Fostertown Rd'     
-            $City = 'Newburgh'
-            $State = 'NY'
-            $Zip = '12550'
-            $FromtDesk = '845.565.5400'
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
         "NY - Middletown" {
-            # NY - Middletown
-            $StreetAddress = '633 Route 211 East'      
-            $City = 'Middletown'
-            $State = 'NY'
-            $Zip = '10941'
-            $FromtDesk = '845.565.5400'
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
         "NY - Poughkeepsie" {
-            # NY - Poughkeepsie
-            $StreetAddress = '2645 South Road, Suite 5'      
-            $City = 'Poughkeepsie'
-            $State = 'NY'
-            $Zip = '12601'
-            $FromtDesk = '845.692.9500'
+            #Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
-        "NY - Harrison" {
-            # NY - Harrison
-            $StreetAddress = '500 Mamaroneck Avenue, Suite 301'     
-            $City = 'Harrison'
-            $State = 'NY'
-            $Zip = '10528'
-            $FromtDesk = '914.381.8900'
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
 
-        # New Jersey State
-        "NJ - Cranford" {
-            # NJ - Cranford
-            $StreetAddress = '20 Commerce Drive, Suite 301'     
-            $City = 'Cranford'
-            $State = 'NJ'
-            $Zip = '07016'
-            $FromtDesk = '908.272.6200'
+        # Location
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
-        "NJ - Hackensack" {
+        "Location" {
             # NJ - Hackensack
-            $StreetAddress = '878 Veterans Memorial Highway, 4th Floor'      
-            $City = 'Hackensack'
-            $State = 'NJ'
-            $Zip = '07601'
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
             $FromtDesk 
             ; break
         }
-        "NJ - Woodcliff Lake" {
-            # NJ - Woodcliff Lake
-            $StreetAddress = '300 Tice Boulevard, Suite 315'      
-            $City = 'Woodcliff Lake'
-            $State = 'NJ'
-            $Zip = '07677'
-            $FromtDesk = '201.712.9800'
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break       
         
         }
 
-        # Massachusetts State
-        "MA - Boston" {
-            # MA - Boston
-            $StreetAddress = '155 Federal Street, Suite 200'      
-            $City = 'Boston'
-            $State = 'MA'
-            $Zip = '02110'
-            $FromtDesk = '781.937.5300'
+        # Location
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
         "MA - Woburn" {
-            # MA - Woburn
-            $StreetAddress = '150 Presidential Way, Suite 510'      
-            $City = 'Woburn'
-            $State = 'MA'
-            $Zip = '01801'
-            $FromtDesk = '781.937.5300'
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
 
         # Connecticut State
-        "CT - Shelton" {
-            # CT - Shelton
-            $StreetAddress = 'One Corporate Drive, Suite 725'        
-            $City = 'Shelton'
-            $State = 'CT'
-            $Zip = '06484'
-            $FromtDesk = '203.929.3535'
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'        
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
         "CT - Stamford" {
-            # CT - Stamford
-            $StreetAddress = '3001 Summer Street - 5th Floor East'      
-            $City = 'Stamford'
-            $State = 'CT'
-            $Zip = '06905'
-            $FromtDesk = '203.323.2400'
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
         "CT - Wethersfield" {
-            # CT - Wethersfield
-            $StreetAddress = '100 Great Meadow Road, Suite 207'     
-            $City = 'Wethersfield'
-            $State = 'CT'
-            $Zip = '06109'
-            $FromtDesk = '860.257.1870'
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
 
-        # Maryland State
-        "MD - Bethesda" {
-            # MD - Bethesda
-            $StreetAddress = '2 Bethesda Metro Center, Suite 420'      
-            $City = 'Bethesda'
-            $State = 'MD'
-            $Zip = '20814'
-            $FromtDesk = '301.652.3464'
+        # Location
+        "Location" {
+            # Location
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
 
-        # Rhode Island
-        "RI - Providence" {
+        # Location
+        "Location" {
             # RI - Providence
-            $StreetAddress = '40 Westminster Street, Suite 600'      
-            $City = 'Providence'
-            $State = 'RI'
-            $Zip = '02903'
-            $FromtDesk = '401.621.6200'
+            $StreetAddress = 'Location'      
+            $City = 'Location'
+            $State = 'Location'
+            $Zip = 'Location'
+            $FromtDesk = 'Location'
             ; break
         }
 
         default {
-            # NY - NYC
-            $StreetAddress = '245 Park Avenue, 12th Floor'     
-            $City = 'New York' 
-            $State = 'NY' 
-            $Zip = '10167' 
-            $FromtDesk = '212.286.2600'
+            # Location
+            $StreetAddress = 'Location'     
+            $City = 'Location' 
+            $State = 'Location' 
+            $Zip = 'Location' 
+            $FromtDesk = 'Location'
         }
     }
 
@@ -788,7 +788,7 @@ and also the switch statement does not cover all states.
         -City $City `
         -State $State `
         -PostalCode $Zip `
-        -Server 'HA-DC1' `
+        -Server 'name' `
         -Replace @{'extensionAttribute4' = $FromtDesk }
 }
 
@@ -811,7 +811,7 @@ Function MailboxSettings {
         try {
             # Add 'SendAs' permissions for the mailbox
             $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@domain.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
-            $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "emailpkfod.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
+            $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@domain.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
             $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@OCDCrm.onmicrosoft.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
             
             # Add 'FullAccess' permissions for the Prostaff_ExchUser
@@ -864,7 +864,7 @@ Function Assign-PhoneNumber {
             }
             catch {
                 if ($TryCount -eq 5) {
-                    Initialize-iPilotSession -ApiKey 'auwpy2oQeK5KUYXvJAhid1ekgi8GrfesaC1qn0uy' -Credential $Cloud
+                    Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
                 }
 
                 $TryCount++
@@ -893,7 +893,7 @@ Function Assign-PhoneNumber {
             }
             catch {
                 if ($TryCount -eq 5) {
-                    Initialize-iPilotSession -ApiKey 'auwpy2oQeK5KUYXvJAhid1ekgi8GrfesaC1qn0uy' -Credential $Cloud
+                    Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
                 }
 
                 if ($TryCount -eq 10) {
@@ -1012,7 +1012,7 @@ Function Email-Notification {
     $html = $Global:NewHireList | select FirstName, LastName, Email, JobTitle, Department, PhoneNumber, State, City | ConvertTo-HtmL | Out-String
     $newhtml = $html #-replace "<td>OFFLINE</td>","<td bgcolor=#FF0000'>OFFLINE</td>" -replace "<td>ONLINE</td>","<td bgcolor=#00FF00'>ONLINE</td>"
     Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-        -To 'NewHireLog@pkfod.com' `
+        -To 'NewHireLog@domain.com' `
         -Subject 'The following newhires has been created by the newhire script' `
         -Credential $Cloud `
         -SmtpServer smtp.office365.com `
@@ -1051,7 +1051,7 @@ This function will create a Ichannel 'Account' for internal users by calling a S
     # Create Ichannel account
     Write-Color -Text "Creating Ichannel account for the user: ", "$cEmail" -Color White, Yellow
     Invoke-Sqlcmd -Query "exec cadoc_system.dbo.spCreateInternalSubscriber 'ROOT', '$cUserID','@cPassword','$cLastName','$cFirstName','$cEmail'" `
-        -As DataSet -ServerInstance "pkf-eip-sql1.odmd.local\ICHANNEL" -Database "cadoc_system"
+        -As DataSet -ServerInstance "name" -Database "cadoc_system"
     
 }
 
@@ -1450,7 +1450,7 @@ Function AssingEvolve-PhoneNumber {
             activatePhoneNumbers     = $false 
             cleanupPreviousEntries   = $true
             description              = "ON_DEMAND user provisioning for gr-0001027323" 
-            enterpriseId             = "eip-0001016600"
+            enterpriseId             = ""
             groupId                  = ('gr-' + "$($FreeNumber.groupId)")
             platformIdentifier       = "broadsoft-f"  
             provisioningMode         = "ON_DEMAND"
@@ -1574,7 +1574,7 @@ Function Add-ADGroups {
     # >>>>>>>>>>>>>>>>>>>>>>>>>>> [ Title ] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     # Get all users in the specified OU with the required properties and filter them by title, and department
     $ADusers1 += Get-ADUser -Filter * `
-        -SearchBase "OU=ODMD,DC=odmd,DC=local" `
+        -SearchBase "OU" `
         -Properties Department, title, office, MemberOf, Enabled  -Server 'HA-DC1' | 
     Where-Object { ($_.Department -eq $Department) -and 
                    ($_.title -eq $Title) -and 
@@ -1591,7 +1591,7 @@ Function Add-ADGroups {
     # >>>>>>>>>>>>>>>>>>>>>>>>>>> [Description] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     # Get all users in the specified OU with the required properties and filter them by title, and department
     $ADusers2 += Get-ADUser -Filter * `
-        -SearchBase "OU=ODMD,DC=odmd,DC=local" `
+        -SearchBase "OU" `
         -Properties Department, Description, office, MemberOf, Enabled  -Server 'HA-DC1' | 
     Where-Object { ($_.Department -like $Department) -and 
                    ($_.Description -like $Title) -and 
@@ -1623,50 +1623,9 @@ Function Add-ADGroups {
 Function AD-changes {
     param($NewHire)
 
-    $IndiaDenyGroup = (
-        'Deny Access - HA-File-04 All E Drive but Audit India and PM',
-        'Deny Access - TS-HA3',
-        'Deny Access - TS-HA2',
-        'Deny Access - Yearli',
-        'Deny Access - HA-C1',
-        'Deny Access - HA-VCenter6',
-        'Deny Access - TS-HA1',
-        'Deny Access - HA-S1',
-        'Deny Access - PKFOD-01',
-        'Ctx-Policies-OPSEU' ,
-        'Deny Access - HA-SQL4 EFG Drives',
-        'Deny Access - HA-FILE-05 E Drive',
-        'Deny Access - HA-APPS-01 E Drive',
-        'Deny Access - HA-APP1 E Drive',
-        'Deny Access - HA-SQL2 E Drive',
-        'Deny Access - HA-PROSTAFF C Drive',
-        'Deny Access - FILE1',
-        'Deny Access - GKG-APP1',
-        'Deny Access - CRA-DC1 E Drive',
-        'Deny Access - MAIN2015',
-        'Deny Access - MBCT320',
-        'Deny Access - WCL-DC1 D Drive',
-        'Deny Access - WCL-DC DF Drives',
-        'Deny Access - HA-SURE2 EF Drives',
-        'Deny Access - HA-SURE EFGH Drives',
-        'Deny Access - BETH-DC1 C Drive',
-        'Deny Access - NTSERVER',
-        'Deny Access - WE-DC1 E Drive',
-        'Deny Access - PAR-DC1 E Drive',
-        'Deny Access - C drive on HA-APPS',
-        'Deny Access - HA-SQL3 E drive',
-        'Deny Access - HA-File-03 E drive',
-        'Deny Access - HA-Tax E drrive',
-        'Deny Access - HA-File-02 E drive'
-    )
+    $IndiaDenyGroup = ("AD group")
 
-    $DefaultGroups = (
-        'AVD.US-Users',
-        'Exclaimer PKFOD',
-        'Group LastPass Users',
-        'Group LastPass Mobile',
-        'iChannel Users'
-    )
+    $DefaultGroups = ("AD group")
 
     if ($NewHire.Status -eq "Contractor/Consultant") {
         foreach ($group in $IndiaDenyGroup) {
@@ -1686,7 +1645,7 @@ Function AD-changes {
 
     if ($NewHire.Status -eq "Employee (Full or Part Time)") {
         Set-ADUser -Identity $NewHire.Username `
-            -Server 'HA-DC1' `
+            -Server 'name' `
             -Replace @{'extensionAttribute3' = $NewHire.CellPhoneNumber } `
             -OfficePhone $NewHire.CellPhoneNumber -ErrorAction SilentlyContinue
     }
@@ -1701,17 +1660,17 @@ Function AD-changes {
     Manage-ADUserMobilePhone -UserPrincipalName $NewHire.Username -MobilePhone $NewHire.PersonalNumber -showNumber $NewHire.ShowNumber
 
     # Set SMTP Address
-    $SMTPpkfod = ('SMTP:' + $NewHire.Username + '@PKFOD.COM')
-    Set-ADUser -Identity $NewHire.Username -add @{"proxyaddresses" = $SMTPpkfod } -Server 'HA-DC1'
+    $SMTPpkfod = ('SMTP:' + $NewHire.Username + '@domain.COM')
+    Set-ADUser -Identity $NewHire.Username -add @{"proxyaddresses" = $SMTPpkfod } -Server 'name'
 
     # Static Groups
     #if($NewHire.City -eq ){}
 
     # Add the LogonScript
-    if (!($NewHire.State -eq 'Massachusetts')) { Set-LogonScript -NewHire $NewHire }
+    if (!($NewHire.State -eq 'State')) { Set-LogonScript -NewHire $NewHire }
 
     # Add Certifications to the AD account
-    if ($NewHire.Certification) { Set-ADUser -Identity $NewHire.Username -add @{"ExtensionAttribute2" = $NewHire.Certification } -Server 'HA-DC1' }
+    if ($NewHire.Certification) { Set-ADUser -Identity $NewHire.Username -add @{"ExtensionAttribute2" = $NewHire.Certification } -Server 'name' }
    
 }
 
