@@ -1696,7 +1696,7 @@ Function AD-changes {
 # ----------------------------------[     Controller     ]-------------------------------------#
 
 
-Function PKFOD-NewHire {
+Function NewHire {
     cls
     # Get a list of Engagement
 
@@ -1872,7 +1872,7 @@ Function Remove-MFAGroup {
         }   
     }
 
-    $AzureG = "c29f8193-9b6f-4a40-935b-1e5c8697e8b5", '8ccc4f3f-beb7-45b2-9c79-4b5174ceef3b'
+    $AzureG = "group", 'group'
     foreach ($G in $AzureG) {
 
         # Retrieves all members of the specified Azure AD group
