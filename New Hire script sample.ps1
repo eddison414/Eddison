@@ -1736,7 +1736,7 @@ Function NewHire {
         # Calculate the number of days between the current date and the StartDate
         $daysUntilStart = (New-TimeSpan -Start (Get-Date) -End $startDate).Days
 
-        # Check if the StartDate is less than 5 days in the future and greater than or equal to the current date,
+        # Check if the StartDate is less than 21 days in the future and greater than or equal to the current date,
         # and the ApprovalStatus is "Pending to Process"
         if ((($daysUntilStart -ge 0) -and 
              ($daysUntilStart -lt 21) -and 
