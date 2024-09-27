@@ -24,7 +24,7 @@ It is essential to understand that due to these customizations, the script is no
 
 ## Strong Recommendation
 
-We strongly advise against using this script in any IT setting other than the one it was specifically created for. If you are considering adapting this script for your environment:
+I strongly advise against using this script in any IT setting other than the one it was specifically created for. If you are considering adapting this script for your environment:
 
 1. Thoroughly review and understand each component of the script
 2. Identify all organization-specific elements that would need modification
@@ -89,11 +89,11 @@ Function required-Modules {
             Write-Host "Module already installed: $module"
         }
     }
-
+}
     
 # ----------------------------------[ Login into the require enviroment]-------------------------------
 
-N/A
+# N/A
     
 # ----------------------------------[     Functions     ]-------------------------------------
   
@@ -1100,5 +1100,5 @@ Function NewHire {
 
 
 #Run the scripts
-PKFOD-NewHire
+NewHire
 Start-Sleep -Seconds (30)
