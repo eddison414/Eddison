@@ -1,153 +1,185 @@
 ﻿
 <#
-Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been customized to align with the specific requirements and configurations of our system. Consequently.
+# Important Notice Regarding Script Usage
 
-It is essential to understand that due to these customizations, the script is not designed for universal application. Attempting to implement it in a different IT environment may not yield the intended results and could potentially lead to system incompatibilities or operational issues.
+Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been meticulously customized to align with the specific requirements, configurations, and security protocols of our system. Consequently, this script is not a generic solution and should be treated with caution.
 
-I advise against using this script in any IT setting other than the one it was specifically created for. If you have any questions or require further clarification, please do not hesitate to reach out.
+## Customization and Specificity
+
+The script incorporates:
+- Custom API calls tailored to our specific systems
+- Hardcoded paths and server names unique to our environment
+- Security measures and access controls specific to our organization
+- Integration with our particular Active Directory structure and naming conventions
+- Customized error handling for our known system quirks and limitations
+
+## Risks of Misapplication
+
+It is essential to understand that due to these customizations, the script is not designed for universal application. Attempting to implement it in a different IT environment may:
+- Not yield the intended results
+- Potentially lead to system incompatibilities or operational issues
+- Cause unintended data modifications or loss
+- Create security vulnerabilities if not properly adapted
+- Result in compliance violations if used in a regulated industry without proper vetting
+
+## Strong Recommendation
+
+We strongly advise against using this script in any IT setting other than the one it was specifically created for. If you are considering adapting this script for your environment:
+
+1. Thoroughly review and understand each component of the script
+2. Identify all organization-specific elements that would need modification
+3. Consult with your IT security team to ensure compliance with your security policies
+4. Test extensively in a sandboxed environment before any production use
+5. Consider rebuilding the script from scratch to ensure full compatibility with your systems
+6. Engage with professional IT consultants if you lack the in-house expertise to safely adapt the script
+
+## Clarification
+Remember, while this script may serve as a valuable reference or starting point, it should not be viewed as a plug-and-play solution for other environments. The safety and integrity of your IT infrastructure should always be the primary concern when considering the use of any external scripts or tools.
 #>﻿
 
+<#
+.SYNOPSIS
+Automates the IT onboarding process for new hires by performing the following key actions:
+- Retrieves new hire data from SharePoint
+- Manages license allocation
+- Creates and configures Active Directory accounts
+- Synchronizes with Azure AD
+- Sets up Exchange mailboxes
+- Manages group memberships
+- Creates and configures home folders
+- Updates physical address information
+- Assigns and configures phone numbers
+- Updates SharePoint lists with onboarding progress
+- Sends notification emails
+- Handles errors and performs logging throughout the process
+
+This script integrates with multiple systems including SharePoint, Active Directory, 
+Exchange Online, and Azure AD to streamline the onboarding workflow.
+#>
 
 # ----------------------------------[     Install required modules     ]-------------------------------------
 Function required-Modules {
     <#
-    This function has every module requiere for this Script to work
+    .SYNOPSIS
+    This function checks for and installs required modules for the script.
     
+    .DESCRIPTION
+    It iterates through a list of required modules, checks if they are installed,
+    and installs them if they are not present.
     #>
     
-    $ExchangeOnline = Get-Module -Name ExchangeOnlineManagement
-    if (!($ExchangeOnline )) { Install-Module -Name ExchangeOnlineManagement -confirm:$false }
-    
-    $PowerShellGet = Get-Module -Name PowerShellGet
-    if (!($PowerShellGet)) { Install-Module -Name PowerShellGet -confirm:$false }
-    
-    $MicrosoftTeams = Get-Module -Name MicrosoftTeams
-    if (!($MicrosoftTeams)) { Install-Module -Name MicrosoftTeams -confirm:$false } 
-    
-    $MSOnline = Get-Module -Name MSOnline
-    if (!($MSOnline)) { Install-Module -Name MSOnline -confirm:$false }
-    
-    $AzureAD = Get-Module -Name AzureAD
-    if (!($AzureAD)) { Install-Module -Name AzureAD -confirm:$false }
-    
-    $PnP = Get-Module PnP.PowerShell
-    if (!($PnP)) { Install-Module -Name PnP.PowerShell -confirm:$false }
-    
-    $SqlServer = Get-Module -Name SqlServer
-    if (!($SqlServer)) { Install-Module -Name SqlServer -confirm:$false }
-    
-    $iPilot = Get-Module -Name iPilot
-    if (!($iPilot)) { Install-Module -Name iPilot -confirm:$false }
-    
-    $PSWriteColor = Get-Module -Name PSWriteColor
-    if (!($PSWriteColor)) { Install-Module -Name PSWriteColor -confirm:$false }
-    
-    #KaceSMA
-    #Install-Module -Name PowerShellGet -Force
-    #Install-Module -Name Teams -Force
-    Install-Module -Name PowerShellGet -Force
-    install-Module -Name MicrosoftTeams 
-}
+    $requiredModules = @(
+        "ExchangeOnlineManagement",
+        "PowerShellGet",
+        "MicrosoftTeams",
+        "MSOnline",
+        "AzureAD",
+        "PnP.PowerShell",
+        "SqlServer",
+        "PSWriteColor"
+        # Add any other required modules here
+    )
 
-Function Encrypt {
-    #### Set and encrypt our own password to file using default ConvertFrom-SecureString method
-(get-credential).password | ConvertFrom-SecureString | set-content 'C:\Users\Automation\Documents\PowerShell Automation\E.txt'
-}
+    foreach ($module in $requiredModules) {
+        if (!(Get-Module -Name $module -ListAvailable)) {
+            Write-Host "Installing module: $module"
+            Install-Module -Name $module -Force -Confirm:$false
+        }
+        else {
+            Write-Host "Module already installed: $module"
+        }
+    }
+
     
 # ----------------------------------[ Login into the require enviroment]-------------------------------
 
-$prem = New-Object System.Management.Automation.PsCredential("automation", $encrypted)
-$Cloud = New-Object System.Management.Automation.PsCredential("Account", $encrypted)
-
-#Connect
-Connect-PnPOnline -Url "Name" -Credentials $Cloud
-Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
-Connect-MsolService -Credential $Cloud
-Connect-ExchangeOnline -Credential $Cloud
-Connect-AzureAD -Credential $Cloud
-Connect-MicrosoftTeams -Credential $Cloud
-
-#Test for connection making sure at least 1 of the DCs is online
-$Connection = Test-Connection -ComputerName 'Name'
-IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
-IF (!($Connection)) {
-    $Connection = Test-Connection -ComputerName 'name'
-    IF ($Connection) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
-}
-IF (!($Connection)) { $PSSessionDC1 = New-PSSession -ComputerName 'name' -Credential $prem }
-
-
-$ichannel = New-PSSession -ComputerName 'name' -Credential $prem
+N/A
     
 # ----------------------------------[     Functions     ]-------------------------------------
   
 Function AD-Account {
+    <#
+    .SYNOPSIS
+    Creates a new Active Directory account for a new hire.
+
+    .DESCRIPTION
+    This function creates a new Active Directory account based on the provided new hire information.
+    It sets various AD attributes and ensures the account is created with proper naming conventions and settings.
+
+    .PARAMETER NewHire
+    An object containing the new hire's information.
+    #>
     param($NewHire)
 
     if ($NewHire.LicenseCheck -eq 'Pass') {
+        # Construct the display name
+        $DisplayName = if ($NewHire.Middle) { 
+            "$($NewHire.FirstName) $($NewHire.Middle) $($NewHire.LastName)" 
+        } else { 
+            "$($NewHire.FirstName) $($NewHire.LastName)" 
+        }
 
-        $DisplayMame = if ($NewHire.Middle) { $NewHire.FirstName + " " + $NewHire.Middle + " " + $NewHire.LastName }else { $NewHire.FirstName + " " + $NewHire.LastName }
+        # Generate a unique username
         $UserPrincipalName = Username-Check -firstName $NewHire.FirstName -LastName $NewHire.LastName
         $UserPrincipalName = $UserPrincipalName.ToLower()
 
-        # Created the AD account in the DC - DGCDOM1
+        # Create the AD account
         $Success = Invoke-Command -Session $PSSessionDC1 -ScriptBlock {
+            $Success = $False
+            $TryCount = 0
+            $MaxTries = 5
 
-            $Success = $False; $TryCount = 0; $MaxTries = 5
-            while (!($Success) -and $TryCount -le $MaxTries) {
-                try {            
-                    # 	Create a new Active Directory Account 
-                    New-ADUser -Name  $args[0] `
+            while (!$Success -and $TryCount -le $MaxTries) {
+                try {
+                    # Create a new Active Directory Account 
+                    New-ADUser -Name $args[0] `
                         -DisplayName $args[0] `
-                        -SamAccountName $args[1]`
-                        -Path $args[2]  `
+                        -SamAccountName $args[1] `
+                        -Path $args[2] `
                         -UserPrincipalName $args[3] `
-                        -AccountPassword $args[4]`
+                        -AccountPassword $args[4] `
                         -EmailAddress $args[3] `
-                        -GivenName  $args[5]`
-                        -Surname  $args[6]`
+                        -GivenName $args[5] `
+                        -Surname $args[6] `
                         -Office $args[7] `
-                        -Enabled:$True  `
-                        -Description $args[8]  `
-                        -Title $args[8]`
+                        -Enabled $True `
+                        -Description $args[8] `
+                        -Title $args[8] `
                         -Department $args[9] `
-                        -Company "company" `
-                        -HomePage "www.company.com" -EmployeeID $args[10] 
+                        -Company "COMPANY_NAME" `
+                        -HomePage "www.company.com" `
+                        -EmployeeID $args[10]
 
                     $Success = $True
                 }
                 catch {
-                    # Increase count by 1
-                    $TryCount++                    
-                    $Error | Out-File '\\company-automate\C$\temp\NewUserErrorLog.txt' -Append
+                    $TryCount++
+                    Write-Error "Attempt $TryCount failed: $_"
+                    Start-Sleep -Seconds 5
                 }
-               
             }
 
             $Success
+        } -ArgumentList $DisplayName, 
+                        $UserPrincipalName, 
+                        (Get-OU -NewHire $NewHire), 
+                        ($UserPrincipalName + "@yourdomain.com"),
+                        (Create-Password -StartDate $NewHire.StartDate),
+                        $NewHire.FirstName,
+                        $NewHire.LastName,
+                        (AD-Office -Location $NewHire.City),
+                        $NewHire.JobTitle,
+                        $NewHire.Department,
+                        $NewHire.EmployeeID
 
-        } -ArgumentList ($DisplayMame), # 0
-                ($UserPrincipalName), # 1
-                (Get-OU -NewHire $NewHire), # 2 
-                ($UserPrincipalName + "domain"), # 3
-                (Create-Password -StartDate $NewHire.StartDate), # 4
-        $NewHire.FirstName, # 5
-        $NewHire.LastName, # 6
-        (AD-Office -Location $NewHire.City), # 7
-        $NewHire.JobTitle, # 8  
-        $NewHire.Department, # 9
-        $NewHire.EmployeeID #10
-        
-
-        if ($Success -eq 'True') {
-    
-            $NewHire | Add-Member -NotePropertyMembers @{'Username' = $UserPrincipalName;
-                'Email'                                             = ($UserPrincipalName + '@domain.com')
+        if ($Success -eq $True) {
+            $NewHire | Add-Member -NotePropertyMembers @{
+                'Username' = $UserPrincipalName
+                'Email' = ($UserPrincipalName + '@yourdomain.com')
             }
-            $NewHire  
-        }             
-    }  
-
+            return $NewHire
+        }
+    }
 }
 
 function Manage-ADUserMobilePhone {
@@ -185,619 +217,516 @@ function Manage-ADUserMobilePhone {
 }
 
 Function Set-LogonScript {
-    Param($NewHire)
-    # Use switch statement to select the logon script based on the department
-    switch ($NewHire.department) {
-        # If the department is IT, assign IT logon script
-        "IT" { $LogonScript = 'ITlogon-65.bat' }
-    }
-    # Use switch statement to select the logon script based on the title
-    switch ($NewHire.title) {
-        # If the title matches Human Resources, assign HR logon script
-        "Human Resources*" { $LogonScript = 'HRlogon-65.bat' }
-    }
-    # Use switch statement to select the logon script based on the office
-    switch ($NewHire.office) {
-        # Assign office specific logon scripts
-        "Location" { $LogonScript = 'logon_nj-65.bat' } 
-        "Location" { $LogonScript = 'logon-65-cr.bat' } 
-        "Location" { $LogonScript = 'logon-65-India.bat' } 
-        "Location" { $LogonScript = 'logon-65-HAP.bat' } 
-        "Location" { $LogonScript = 'logon-65-NB.bat' } 
-        "Location" { $LogonScript = 'logon-SHL.bat' } 
-        "Location" { $LogonScript = 'logon_LBG-65.bat' } 
-        "Location" { $LogonScript = 'logon-65-BFMM.bat' } 
-        "Location" { $LogonScript = 'logon_jgs-65.bat' } 
-        "MLocation" { $LogonScript = 'logon-65-md.bat' } 
-        "Location" { $LogonScript = 'logon_wo-65.bat' } 
+    <#
+    .SYNOPSIS
+    Assigns an appropriate logon script to a new user based on their department and location.
 
-        # NJ - Woodcliff Lake
-        # those twp logon scripts are assign to the same office. We need to know what is the difference
-        "Location" { $LogonScript = 'logon_nj-65.bat' }
+    .DESCRIPTION
+    This function determines the appropriate logon script for a new user based on their department,
+    job title, and office location. It then assigns this script to the user's AD account.
 
-        # NY - NYC
-        # those twp logon scripts are assign to the same office. We need to know what is the difference
-        "Location" { $LogonScript = 'TAX-65.bat' }
-
-        # Assign default logon scripts where there is no match
-        "" { $LogonScript = 'logon-65-mktg.bat' } # No office provided, assign marketing logon script
-        "" { $LogonScript = 'NTUsers-65.bat' } # No office provided, assign general user logon script
-
-        # Assign default logon script for any other office
-        default { $LogonScript = 'logon-65.bat' }
-    }
-    # Set the script path for the new hire
-    Set-ADUser -Identity $NewHire.Username -ScriptPath $LogonScript
-}
-  
-Function Get-OU {
-    [CmdletBinding()]
-    Param
-    (
-        # Param1 help description
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyString ()]
-        $NewHire
-        
-    )
-    switch ($NewHire.City) {
-        "Location" { $OU = 'OU' ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OUl" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU" ; }
-        "Location" { $OU = "OU"; }
-        "Location" { $OU = "OU" ; }
-        default { $OU = 'OU' }
-    }
-
-    # Exections, in case the user should be on a different OU regarless of the location
-    <# switch ($NewHire.Department) {
-        "name" { $OU = "OU=Group IT,OU=ODMD,DC=odmd,DC=local" ; break }
-        "name" { $OU = "OU=Financial Services,OU=ODMD,DC=odmd,DC=local" }
-        "name" { $OU = "OU=Family Office,OU=ODMD,DC=odmd,DC=local" }
-        "name" { $OU = "OU=Emmaus,OU=ODMD,DC=odmd,DC=local" }
-        "name" { $OU = "OU=Clear Thinking,OU=ODMD,DC=odmd,DC=local" }
-    }
+    .PARAMETER NewHire
+    An object containing the new hire's information, including department, job title, and office location.
     #>
+    Param($NewHire)
 
-    $OU
+    # Initialize logon script variable
+    $LogonScript = $null
+
+    # Determine logon script based on department
+    switch -regex ($NewHire.department) {
+        "^IT" { $LogonScript = 'IT_LogonScript.bat' }
+        "^HR" { $LogonScript = 'HR_LogonScript.bat' }
+        "^Finance" { $LogonScript = 'Finance_LogonScript.bat' }
+        # Add more department-specific scripts as needed
+    }
+
+    # If no department-specific script, check job title
+    if (-not $LogonScript) {
+        switch -regex ($NewHire.title) {
+            "Manager" { $LogonScript = 'Manager_LogonScript.bat' }
+            "Executive" { $LogonScript = 'Executive_LogonScript.bat' }
+            # Add more title-specific scripts as needed
+        }
+    }
+
+    # If still no script assigned, use location-based script
+    if (-not $LogonScript) {
+        switch ($NewHire.office) {
+            "Headquarters" { $LogonScript = 'HQ_LogonScript.bat' }
+            "Branch_Office" { $LogonScript = 'Branch_LogonScript.bat' }
+            "Remote" { $LogonScript = 'Remote_LogonScript.bat' }
+            # Add more location-specific scripts as needed
+            default { $LogonScript = 'Default_LogonScript.bat' }
+        }
+    }
+
+    # Assign the determined logon script to the user
+    try {
+        Set-ADUser -Identity $NewHire.Username -ScriptPath $LogonScript -ErrorAction Stop
+        Write-Host "Logon script '$LogonScript' successfully assigned to $($NewHire.Username)"
+    }
+    catch {
+        Write-Error "Failed to assign logon script to $($NewHire.Username): $_"
+    }
 }
 
 function AD-Office {
+    <#
+    .DESCRIPTION
+    This function takes a city name as input and returns a standardized office location string.
+    It's used to ensure consistency in office designations across Active Directory entries.
+
+    .PARAMETER Location
+    The name of the city where the employee is located.
+
+    .EXAMPLE
+    AD-Office -Location "CityA"
+    Returns: "State1 - CityA"
+
+    .NOTES
+    The function uses a switch statement to map cities to their corresponding state or region.
+    Cities not explicitly listed will be assigned to the default HQ location.
+    #>
+
     param(
-
         [Parameter(Mandatory = $True)]
-        [AllowEmptyString ()]
+        [AllowEmptyString()]
         [String]$Location
-
     )
 
+    # Use switch statement to determine the appropriate office designation
     switch ($Location) {
-        # New York State
-        { "Location", "Location", "Location", "Location" -eq $_ } { $Office = "NY - $Location" }
-
-        # New Jersey State
-        { "Location", "Location", "Location" -eq $_ } { $Office = "NJ - $Location" }
-
-        # Massachusetts State
-        { "Boston", "Location" -eq $_ } { $Office = "MA - $Location" }
-
-        # Connecticut State
-        { "Location", "Location", "Location" -eq $_ } { $Office = "CT - $Location" }
-
-        # Maryland State
-        { "Location" -eq $_ } { $Office = "MD - $Location" }
-
-        # Rhode Island
-        { "Location" -eq $_ } { $Office = "RI - $Location" }
-
-        #International
-        { "Location", "Location", "Location" -eq $_ } { $Office = "international" }
-
-        # Default
-        default { $Office = "NY - Location" }
+        # Group cities by state or region
+        { "CityA", "CityB", "CityC", "CityD" -contains $_ } { 
+            $Office = "State1 - $Location" 
+        }
+        { "CityE", "CityF", "CityG" -contains $_ } { 
+            $Office = "State2 - $Location" 
+        }
+        { "CityH", "CityI" -contains $_ } { 
+            $Office = "State3 - $Location" 
+        }
+        { "CityJ", "CityK", "CityL" -contains $_ } { 
+            $Office = "State4 - $Location" 
+        }
+        "CityM" { 
+            $Office = "State5 - $Location" 
+        }
+        "CityN" { 
+            $Office = "State6 - $Location" 
+        }
+        # International locations
+        { "CityO", "CityP", "CityQ" -contains $_ } { 
+            $Office = "International" 
+        }
+        # Default case for any unspecified locations
+        default { 
+            $Office = "HQ - DefaultCity" 
+        }
     }
 
-    # Output 
+    # Return the standardized office designation
     $Office
 }
 
-Function Waitfor-sycn {
-    [CmdletBinding()]
+
+Function Waitfor-sync {
     <#
- The script "Waitfor-sycn" is a function that takes in three parameters: an email,
- a username, and a status. It attempts to add the user's email to an Azure AD group based on the status, 
- and retries up to 10 times with a 5-minute sleep in between each failure. If it fails 10 times, 
- it removes the AD account and sends an email to IT. The function also includes a verbose message that logs the progress of the script.
-#>
+    .DESCRIPTION
+    This function attempts to add a user to specified Azure AD groups based on their status.
+    It retries the operation multiple times if it fails, with increasing wait times between attempts.
+
+    .PARAMETER Email
+    The email address of the user to be added to the groups.
+
+    .PARAMETER Username
+    The username of the user to be added to the groups.
+
+    .PARAMETER Status
+    The status of the user, which determines which groups they will be added to.
+
+    .NOTES
+    This function assumes that Azure AD sync is running and may take some time to complete.
+    If all attempts fail, it will trigger a cleanup process and log the failure.
+    #>
     
-    Param([string]$Email, $Username, $status)
-
-
+    Param(
+        [string]$Email,
+        [string]$Username,
+        [string]$Status
+    )
 
     $Success = $False
     $TryCount = 0
     $MaxTries = 10
-    $Waiting = 300
-    while (!($Success) -and $TryCount -le $MaxTries) {
+    $Waiting = 300  # Initial wait time in seconds
+
+    while (!$Success -and $TryCount -le $MaxTries) {
         try {
-            # Assign the user to 'MFA Exclusion Group'
-            Add-AzureADGroupMember -ObjectId '28ade99f-e283-4442-96ec-2437279e8d5f' -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -Verbose
-            
-            if ($status -like "Employee (Full or Part Time)") {
-                #  Assign Microsft 365 E3, Teams phone Standard, and conferencing
-                Add-AzureADGroupMember -ObjectId '8ccc4f3f-beb7-45b2-9c79-4b5174ceef3b' -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -Verbose
-                Write-Color -Text "The user: ", "$Username ", "has been added to the Azure group: ", "Standard US User" -Color White, Green, White, Green
-                # Write-Verbose -Message "The user $Email, has been added to the group: Microsoft 365 E3 License"
+            # Attempt to add user to a general exclusion group
+            Add-AzureADGroupMember -ObjectId "GeneralExclusionGroupID" -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -ErrorAction Stop
+
+            # Add user to specific groups based on their status
+            if ($Status -like "Full Time Employee") {
+                Add-AzureADGroupMember -ObjectId "FullTimeEmployeeGroupID" -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -ErrorAction Stop
+                Write-Host "User $Username added to Full Time Employee group" -ForegroundColor Green
             }
             else {
-                #  Assign Microsft 365 E3, and conferencing
-                Add-AzureADGroupMember -ObjectId 'c29f8193-9b6f-4a40-935b-1e5c8697e8b5' -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -Verbose
-                Write-Color -Text "The user: ", "$Username ", "has been added to the Azure group:", "Interns, US Contractors, and Offshore Users" -Color White, Green, White, Green
-                #Write-Verbose -Message "The user $Email, has been added to the group: Microsoft 365 E3 License"
-            
+                Add-AzureADGroupMember -ObjectId "OtherEmployeeGroupID" -RefObjectId (Get-AzureADUser -ObjectId $Email).ObjectId -ErrorAction Stop
+                Write-Host "User $Username added to Other Employee group" -ForegroundColor Green
             }
     
             $Success = $True
         }
         catch {
-
-
-            if ($TryCount -eq 2) { $Null = Invoke-Command -Session $PSSessionDC1 -ScriptBlock { start-adsyncsynccycle } }
-            if ($TryCount -eq 5) { $Null = Invoke-Command -Session $PSSessionDC1 -ScriptBlock { start-adsyncsynccycle } }
-            if ($TryCount -eq 8) { $Null = Invoke-Command -Session $PSSessionDC1 -ScriptBlock { start-adsyncsynccycle } }
-            if ($TryCount -le 9) {
-                # If it fail
-                Write-Color -text "The user ", "$Email ", "has not been found in the cloud, waiting ", "$($Waiting / 60) ", "minutes" -Color White, Green, White, Green, White 
-                $Waiting = ($Waiting + 300)
-                           
-                Start-Sleep -Seconds ($Waiting)
-            }
-
-            # If the count was to 10 killswitch  the AD Account
-            if ($TryCount -eq 10) {
-                Remove-ADUser -Server 'Name' -Identity $Username -confirm:$false; Clear-Variable $NewHire
-                Write-Color -Text "The script has done ", "$TryCount ", "tries to find the new hire: ", "$Username", " in the cloud.", "The AD Account will be deleted", " And the script will try again tomorrow" `
-                    -Color White, Yellow, White, Green, White, Red, White
-                
-                # create a script to send an email letting IT know about this.
-                $Global:killswitchMessage += "
-                A critical step has fail after multiple attempts. The AD account $Username will be deleted, And the script will try again tomorrow. Function; Waitfor-sycn 
-                "
-            }
-
             $TryCount++
 
+            if ($TryCount -in @(2, 5, 8)) {
+                # Trigger AD sync on specific attempts
+                Invoke-Command -Session $PSSessionDC1 -ScriptBlock { Start-ADSyncSyncCycle } -ErrorAction SilentlyContinue
+            }
+
+            if ($TryCount -le 9) {
+                Write-Host "Attempt $TryCount: User $Email not found in Azure AD. Waiting $($Waiting / 60) minutes before next attempt." -ForegroundColor Yellow
+                Start-Sleep -Seconds $Waiting
+                $Waiting += 300  # Increase wait time for next attempt
+            }
+
+            if ($TryCount -eq $MaxTries) {
+                # Cleanup process if all attempts fail
+                Remove-ADUser -Server "DC1" -Identity $Username -Confirm:$false
+                Write-Host "Max attempts reached. AD account for $Username has been removed. Process will be retried later." -ForegroundColor Red
+                
+                # Log the failure
+                $Global:SyncFailureLog += "Sync failed for user $Username after $MaxTries attempts."
+            }
         }
-    
-        # Increase count by 1
-        # $TryCount++ look into this
     }
 }
+
 
 Function License-Count {
-    # Write-Verbose -Message "Geting license count for 'Office E3'"
-    $OfficeE3 = Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:SPE_E3" }
-    $Global:OfficeE3 = $OfficeE3.ActiveUnits - $OfficeE3.ConsumedUnits;
-    Write-Color -Text 'Geting total free license count for; ', 'Office E3', ' (', "$Global:OfficeE3", ')' -Color White, Yellow, White, Green, White
-    
-    # Write-Verbose -Message "Geting license count for 'Microsft Teams Phone Standard'"
-    $TeamsPhone = Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:MCOEV" }
-    $Global:TeamsPhone = $TeamsPhone.ActiveUnits - $TeamsPhone.ConsumedUnits;
-    Write-Color -Text 'Geting total free license count for; ', 'Microsft Teams Phone Standard', ' (', "$Global:TeamsPhone", ')' -Color White, Yellow, White, Green, White
-    
-    # Write-Verbose -Message "Geting license count for 'Microsoft Teams Audio Conferencing select dial-out'"
-    $Conferencing = Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:Microsoft_Teams_Audio_Conferencing_select_dial_out" }
-    $Global:Conferencing = $Conferencing.ActiveUnits - $Conferencing.ConsumedUnits;
-    Write-Color -Text 'Geting total free license count for; ', 'Microsoft Teams Audio Conferencing select dial-out', ' (', "$Global:Conferencing", ')' -Color White, Yellow, White, Green, White
+    <#
+    .DESCRIPTION
+    This function retrieves and calculates the number of available licenses for various
+    Microsoft 365 products. It stores the results in global variables for later use.
 
+    .NOTES
+    This function assumes you have the necessary permissions to query license information
+    and that you're already connected to the Microsoft 365 tenant.
+    #>
 
+    # Initialize counters for license requests
+    $Global:Request_LicenseA = 0
+    $Global:Request_LicenseB = 0
+    $Global:Request_LicenseC = 0
 
-    $Global:Request_OfficeE3 = 0
-    $Global:Request_TeamsPhone = 0
-    $Global:Request_Conferencing = 0
-
-}
-         
-function License-check {
-    param($NewHireList)
-
-                            
-    Begin {  }
-
-    Process {
-            
-        foreach ($User in $NewHireList) {
-            $FirstName = $user.FirstName
-            
-            $Global:OfficeE3 = ($Global:OfficeE3 - 1);
-            if ($Global:OfficeE3 -gt 1) {
-                Write-Color -Text 'Office E3;', ' (', "$Global:OfficeE3", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "PASS!" `
-                    -Color yellow, White, Green, White, White, Yellow, White, Green
-                $E3 = 'True'
-            }
-            else {
-                Write-Color -Text 'Office E3;', ' (', "$Global:OfficeE3", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "FAIL!" `
-                    -Color yellow, White, Red, White, White, Yellow, White, Red
-                $Global:Request_OfficeE3 += 1
-            }
-
-            if ($User.Status -eq "Employee (Full or Part Time)") {
-                $Global:TeamsPhone = ($Global:TeamsPhone - 1);
-                if ($Global:TeamsPhone -gt 1) {
-                    Write-Color -Text 'Teams Phone Standard;', ' (', "$Global:TeamsPhone", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "PASS!" `
-                        -Color yellow, White, Green, White, White, Yellow, White, Green
-                    $Teams = 'True'
-                }
-                else {
-                    Write-Color -Text 'Teams Phone Standard;', ' (', "$Global:TeamsPhone", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "FAIL!" `
-                        -Color yellow, White, Red, White, White, Yellow, White, Red
-                    $Global:Request_TeamsPhone += 1
-                } 
-            }
-
-            
-            $Global:Conferencing = ($Global:Conferencing - 1);
-            if ($Global:Conferencing -gt 1) {
-                Write-Color -Text 'Microsoft Teams Audio Conferencing select dial-out;', ' (', "$Global:Conferencing", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "PASS!" `
-                    -Color yellow, White, Green, White, White, Yellow, White, Green
-                $Conference = 'True'
-            }
-            else {
-                Write-Color -Text 'Microsoft Teams Audio Conferencing select dial-out;', ' (', "$Global:Conferencing", ') ', 'License check for the user; ', "$($user.FirstName + ' ' + $user.lastName)", "...", "FAIL!" `
-                    -Color yellow, White, Red, White, White, Yellow, White, Red
-                $Global:Request_Conferencing += 1
-            }     
-            
-            if (($User.Status -eq "Employee (Full or Part Time)") -and (($E3 -eq 'True') -and ($Teams -eq 'True') -and ($Conference -eq 'True'))) { 
-                Write-Color "the user, ", "$($user.FirstName + ' ' + $user.lastName) ", "has pass ", "(3/3) ", "License check"  -Color White, Green, White, Green, White
-                $User  | Add-Member -NotePropertyMembers @{'LicenseCheck' = "Pass"; }
-                $User  
-            } 
-            if ((($User.Status -eq 'Contractor/Consultant') -or ($User.Status -eq 'Intern')) -and (($E3 -eq 'True') -and ($Conference -eq 'True'))) {
-                Write-Color "the user, ", "$($user.FirstName + ' ' + $user.lastName) ", "has pass ", "(2/2) ", "License check"  `
-                    -Color White, Green, White, Green, White
-                $User  | Add-Member -NotePropertyMembers @{'LicenseCheck' = "Pass"; }
-                $User             
-            }
-            else {
-                Write-Color -Text "The user; ", "$($user.FirstName + ' ' + $user.lastName)", "becasuse there are not suficient licenses for it" `
-                    -Color White, Yellow, White
-            }
-        }
-    
-  
-    
-        
+    # Function to get available licenses for a specific product
+    function Get-AvailableLicenses {
+        param (
+            [string]$ProductName,
+            [string]$LicenseSku
+        )
+        $LicenseInfo = Get-MsolAccountSku | Where-Object { $_.AccountSkuId -like $LicenseSku }
+        $AvailableLicenses = $LicenseInfo.ActiveUnits - $LicenseInfo.ConsumedUnits
+        Write-Host "Available $ProductName licenses: $AvailableLicenses" -ForegroundColor Green
+        return $AvailableLicenses
     }
 
-    End { 
+    # Get license counts for different products
+    $Global:LicenseA = Get-AvailableLicenses -ProductName "License A" -LicenseSku "TenantName:LicenseA"
+    $Global:LicenseB = Get-AvailableLicenses -ProductName "License B" -LicenseSku "TenantName:LicenseB"
+    $Global:LicenseC = Get-AvailableLicenses -ProductName "License C" -LicenseSku "TenantName:LicenseC"
 
-             
+    # Log the license counts
+    Write-Host "License count retrieval complete." -ForegroundColor Yellow
+}
+         
+Function License-check {
+    <#
+    .DESCRIPTION
+    This function checks the availability of licenses for new hires and determines
+    if there are enough licenses available based on the employee's status.
+
+    .PARAMETER NewHireList
+    An array of new hire objects containing information about each new employee.
+
+    .NOTES
+    This function assumes that global variables for license counts and requests
+    have been initialized by a previous function call (e.g., License-Count).
+    #>
+    param($NewHireList)
+
+    Begin {
+        # Initialize any necessary variables
+    }
+
+    Process {
+        foreach ($User in $NewHireList) {
+            $FirstName = $User.FirstName
+            $LicenseCheckPassed = $true
+
+            # Check License A availability
+            $Global:LicenseA = ($Global:LicenseA - 1)
+            if ($Global:LicenseA -gt 1) {
+                Write-Host "License A available for $FirstName $($User.LastName)" -ForegroundColor Green
+            }
+            else {
+                Write-Host "License A not available for $FirstName $($User.LastName)" -ForegroundColor Red
+                $Global:Request_LicenseA += 1
+                $LicenseCheckPassed = $false
+            }
+
+            # Check License B availability for full-time employees
+            if ($User.Status -eq "Full Time Employee") {
+                $Global:LicenseB = ($Global:LicenseB - 1)
+                if ($Global:LicenseB -gt 1) {
+                    Write-Host "License B available for $FirstName $($User.LastName)" -ForegroundColor Green
+                }
+                else {
+                    Write-Host "License B not available for $FirstName $($User.LastName)" -ForegroundColor Red
+                    $Global:Request_LicenseB += 1
+                    $LicenseCheckPassed = $false
+                }
+            }
+
+            # Check License C availability
+            $Global:LicenseC = ($Global:LicenseC - 1)
+            if ($Global:LicenseC -gt 1) {
+                Write-Host "License C available for $FirstName $($User.LastName)" -ForegroundColor Green
+            }
+            else {
+                Write-Host "License C not available for $FirstName $($User.LastName)" -ForegroundColor Red
+                $Global:Request_LicenseC += 1
+                $LicenseCheckPassed = $false
+            }
+
+            # Determine if all required licenses are available
+            if ($LicenseCheckPassed) {
+                $requiredLicenses = if ($User.Status -eq "Full Time Employee") { "3/3" } else { "2/2" }
+                Write-Host "User $FirstName $($User.LastName) has passed ($requiredLicenses) License check" -ForegroundColor Green
+                $User | Add-Member -NotePropertyMembers @{'LicenseCheck' = "Pass" } -Force
+            }
+            else {
+                Write-Host "Not enough licenses available for $FirstName $($User.LastName)" -ForegroundColor Yellow
+            }
+
+            # Return the updated user object
+            $User
+        }
+    }
+
+    End {
+        # Perform any necessary cleanup or final operations
     }
 }
 
 Function Waitfor-Mailbox {
-    [CmdletBinding()]
-    Param([string]$Email, $Username)
+    <#
+    .DESCRIPTION
+    This function checks for the existence of a mailbox for a newly created user.
+    It attempts to retrieve the mailbox multiple times, waiting between attempts.
 
-    $Success = $False; $TryCount = 0; $MaxTries = 10
-    while (!($Success) -and $TryCount -le $MaxTries) {
+    .PARAMETER Email
+    The email address of the user whose mailbox is being checked.
+
+    .PARAMETER Username
+    The username of the user, used for logging and potential cleanup operations.
+
+    .NOTES
+    This function assumes you have the necessary permissions to query Exchange Online
+    and that you're already connected to the Exchange Online service.
+    #>
+    [CmdletBinding()]
+    Param(
+        [string]$Email,
+        [string]$Username
+    )
+
+    $Success = $False
+    $TryCount = 0
+    $MaxTries = 10
+    $WaitTimeSeconds = 60
+
+    while (!$Success -and $TryCount -lt $MaxTries) {
         try {
-            #  Script goes here
-            $Mailbox = Get-Mailbox -Identity $Email -ErrorAction SilentlyContinue 
+            $Mailbox = Get-Mailbox -Identity $Email -ErrorAction Stop
             
             if ($Mailbox) { 
-                Write-Host "Mailbox for $Email has been created"
-                $Success = "True" 
+                Write-Host "Mailbox for $Email has been created successfully." -ForegroundColor Green
+                $Success = $True
             }  
-           
         }
         catch {
-            # If the count was to 10 killswitch  the AD Account
-            if ($TryCount -eq 10) {
-                Remove-ADUser -Server 'name' -Identity $Username -confirm:$false; Clear-Variable $NewHire
-                Write-Color -Text "The script has done ", "$TryCount ", "tries to find the new hire: ", "$Username", " in the cloud.", "The AD Account will be deleted", " And the script will try again tomorrow" `
-                    -Color White, Yellow, White, Green, White, Red, White
-                
-                # create a script to send an email letting IT know about this.
-                $Global:killswitchMessage += "
-                A critical step has fail after multiple attempts. The AD account $Username will be deleted, And the script will try again tomorrow. Function; Waitfor-Mailbox 
-                "
-            }
-            # If it fail
-            Write-Host "The mailbox for  $Email, has not been created, waiting 2 minute"
-            Start-Sleep -Seconds (60) 
             $TryCount++
+            
+            if ($TryCount -eq $MaxTries) {
+                Write-Host "Failed to find mailbox for $Email after $MaxTries attempts." -ForegroundColor Red
+                Write-Host "Initiating cleanup process for $Username" -ForegroundColor Yellow
+                
+                # Placeholder for cleanup process
+                # In a real scenario, you might want to remove the AD account or perform other cleanup tasks
+                # Remove-ADUser -Identity $Username -Confirm:$false
+                
+                # Log the failure
+                $Global:MailboxCreationFailures += "Failed to create mailbox for $Username after $MaxTries attempts."
+            }
+            else {
+                Write-Host "Attempt $TryCount: Mailbox for $Email not found. Waiting $WaitTimeSeconds seconds before next attempt." -ForegroundColor Yellow
+                Start-Sleep -Seconds $WaitTimeSeconds
+            }
         }
+    }
+
+    if ($Success) {
+        return $True
+    }
+    else {
+        return $False
     }
 }
 
-function Username-Check {
+Function Username-Check {
     <#
-    This is a PowerShell function named "Username-Check" that generates a unique email by 
-    concatenating the first character of the first name, the last name, and a domain name.
-    It checks if the email is already taken in Active Directory and, if so, 
-    tries again with a dot between the first name and last name. If both attempts fail, 
-    it returns a warning message. The function takes two mandatory string parameters: "firstName" and "lastName".
+    .DESCRIPTION
+    This function generates a unique username for a new user based on their first and last name.
+    It checks for existing usernames in Active Directory and adjusts the username if conflicts are found.
+
+    .PARAMETER firstName
+    The first name of the new user.
+
+    .PARAMETER lastName
+    The last name of the new user.
+
+    .NOTES
+    This function assumes you have the necessary permissions to query Active Directory.
+    It follows a specific pattern for username generation and conflict resolution.
     #>
     [CmdletBinding()]
-    Param
-    (
-        # Param1 help description
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ValueFromRemainingArguments = $false)]
+    Param (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         [String]$firstName,
 
-        # Param2 help description
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ValueFromRemainingArguments = $false)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
         [String]$lastName
     )
 
-    $domain = "@domain.com"
+    $domain = "@example.com"
     $email = $firstName[0] + $lastName + $domain
 
+    # Function to check if a username exists in AD
+    function Test-ADUsername {
+        param([string]$Username)
+        return [bool](Get-ADUser -Filter {SamAccountName -eq $Username} -ErrorAction SilentlyContinue)
+    }
+
     # Check for unique email in AD
-    $Email1 = Get-ADObject -Filter { mail -eq $email }
-
-    if ($Email1) {
+    if (Test-ADUsername ($email -replace $domain)) {
         $email = $firstName + '.' + $lastName + $domain
-        $Email2 = Get-ADObject -Filter { mail -eq $email }
-
-        if ($Email2) {
-            Write-Warning "Cannot generate a unique email for $firstName $lastName"
-        }
-        else {
-            $email = $email
+        
+        if (Test-ADUsername ($email -replace $domain)) {
+            # If both attempts fail, generate a unique username
+            $counter = 1
+            do {
+                $email = $firstName[0] + $lastName + $counter + $domain
+                $counter++
+            } while (Test-ADUsername ($email -replace $domain))
         }
     }
-    else {
-        $email = $email
-    }
 
-    $username, $domain = $email -split '@'
-
-    $username
+    $username = ($email -split '@')[0]
+    Write-Verbose "Generated username: $username"
+    return $username
 }
 
-Function Create-Password {
-    param(
-        $StartDate
-    )
-
-    function Get-DateSuffix([datetime]$Date) {
-        switch -regex ($Date.Day.ToString()) {
-            '1(1|2|3)$' { 'th' }
-            '.?1$' { 'st' }
-            '.?2$' { 'nd' }
-            '.?3$' { 'rd' }
-            default { 'th' }
-        }
-    }
-    [datetime]$StartDate = $StartDate 
-    [String]$password = "{0:MMM}{1}{2}{3}" -f $StartDate, $StartDate.Day, (Get-DateSuffix $StartDate), $StartDate.Year
-    [String]$Pass = @('domain' + $password + '!!')
-
-    $PW = $Pass | ConvertTo-SecureString -AsPlainText -Force
-    $PW 
-}
 
 function change-physicaladdress {
     <#
-This script is a PowerShell function called "change-physicaladdress" that takes a single parameter, 
-a user's username, and updates the user's physical address in Active Directory based on their office location.
+    .DESCRIPTION
+    This function updates the physical address attributes of a user in Active Directory
+    based on their office location.
 
-The function first uses the Get-ADUser cmdlet to retrieve the user's office location from Active Directory. 
-It then uses a switch statement to determine which office location the user is in and sets the corresponding street address, city, state, zip code, and front desk phone number.
+    .PARAMETER Username
+    The username of the user whose address information needs to be updated.
 
-Each case in the switch statement corresponds to a different office location. For example, 
-if the user's office location is "NY - NYC", the street address is set to "245 Park Avenue, 12th Floor", 
-the city is set to "New York", the state is set to "NY", the zip code is set to "10167", and the front desk phone number is set to "212.286.2600".
-
-Once the variables are set, the function then uses the Set-ADUser cmdlet to update the user's physical address in Active Directory with the values stored in the variables.
-It is important to note that this script is not complete and does not include the actual code to update the user's physical address in Active Directory, 
-and also the switch statement does not cover all states.
-#>
-
+    .NOTES
+    This function assumes you have the necessary permissions to query and modify
+    Active Directory user objects.
+    #>
     param(
-
         [Parameter(Mandatory = $True)]
-        [AllowEmptyString ()]
         [String]$Username
     )
     
-    $Location = (Get-ADUser -Identity $Username -Properties office -Server HA-DC1).office
+    # Retrieve the user's office location from Active Directory
+    $Location = (Get-ADUser -Identity $Username -Properties Office).Office
 
+    # Define address information based on office location
     switch ($Location) {
-        # Location
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location' 
-            $State = 'Location' 
-            $Zip = 'Location' 
-            $FromtDesk = 'Location'
-            ; break
+        "Location1" {
+            $AddressInfo = @{
+                StreetAddress = "Street Address 1"
+                City          = "City1"
+                State         = "State1"
+                PostalCode    = "PostalCode1"
+                Country       = "Country1"
+                OfficePhone   = "+1 000 000-0000"
+            }
         }
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
+        "Location2" {
+            $AddressInfo = @{
+                StreetAddress = "Street Address 2"
+                City          = "City2"
+                State         = "State2"
+                PostalCode    = "PostalCode2"
+                Country       = "Country2"
+                OfficePhone   = "+1 000 000-0000"
+            }
         }
-        "NY - Middletown" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "NY - Poughkeepsie" {
-            #Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-
-        # Location
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "Location" {
-            # NJ - Hackensack
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk 
-            ; break
-        }
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break       
-        
-        }
-
-        # Location
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "MA - Woburn" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-
-        # Connecticut State
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'        
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "CT - Stamford" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-        "CT - Wethersfield" {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-
-        # Location
-        "Location" {
-            # Location
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-
-        # Location
-        "Location" {
-            # RI - Providence
-            $StreetAddress = 'Location'      
-            $City = 'Location'
-            $State = 'Location'
-            $Zip = 'Location'
-            $FromtDesk = 'Location'
-            ; break
-        }
-
         default {
-            # Location
-            $StreetAddress = 'Location'     
-            $City = 'Location' 
-            $State = 'Location' 
-            $Zip = 'Location' 
-            $FromtDesk = 'Location'
+            Write-Warning "Unknown office location: $Location. Using default address."
+            $AddressInfo = @{
+                StreetAddress = "Default Street Address"
+                City          = "Default City"
+                State         = "Default State"
+                PostalCode    = "Default PostalCode"
+                Country       = "Default Country"
+                OfficePhone   = "+1 000 000-0000"
+            }
         }
     }
 
-
-    # Update AD Attribute for physicaladdress
-    Set-ADUser -Identity $Username `
-        -StreetAddress $StreetAddress `
-        -City $City `
-        -State $State `
-        -PostalCode $Zip `
-        -Server 'name' `
-        -Replace @{'extensionAttribute4' = $FromtDesk }
+    # Update AD attributes for the user
+    try {
+        Set-ADUser -Identity $Username -Replace @{
+            StreetAddress = $AddressInfo.StreetAddress
+            City          = $AddressInfo.City
+            State         = $AddressInfo.State
+            PostalCode    = $AddressInfo.PostalCode
+            Country       = $AddressInfo.Country
+        }
+        Set-ADUser -Identity $Username -OfficePhone $AddressInfo.OfficePhone
+        Write-Host "Successfully updated physical address for user: $Username" -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Failed to update physical address for user: $Username. Error: $_"
+    }
 }
+
+
 
 Function MailboxSettings {
     <#
-    .SYNOPSIS
-    This function applies several settings and permissions to a specified mailbox.
+    .DESCRIPTION
+    This function applies several settings and permissions to a specified mailbox in Exchange Online.
+
     .PARAMETER UserPrincipalName
-    The user principal name (UPN) of the user.
+    The user principal name (UPN) of the user whose mailbox settings need to be configured.
+
+    .NOTES
+    This function assumes you have the necessary permissions to modify Exchange Online mailboxes
+    and that you're already connected to Exchange Online PowerShell.
     #>
     Param(
         [Parameter(Mandatory = $true)]
@@ -810,746 +739,115 @@ Function MailboxSettings {
     do {
         try {
             # Add 'SendAs' permissions for the mailbox
-            $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@domain.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
-            $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@domain.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
-            $Null = Add-RecipientPermission -Identity $UserPrincipalName -Trustee "email@OCDCrm.onmicrosoft.com" -AccessRights SendAs -Confirm:$false -ErrorAction SilentlyContinue
+            Add-RecipientPermission -Identity $UserPrincipalName -Trustee "admin1@example.com" -AccessRights SendAs -Confirm:$false -ErrorAction Stop
+            Add-RecipientPermission -Identity $UserPrincipalName -Trustee "admin2@example.com" -AccessRights SendAs -Confirm:$false -ErrorAction Stop
+            Add-RecipientPermission -Identity $UserPrincipalName -Trustee "service@example.onmicrosoft.com" -AccessRights SendAs -Confirm:$false -ErrorAction Stop
             
-            # Add 'FullAccess' permissions for the Prostaff_ExchUser
-            $Null = Add-MailboxPermission -Identity $UserPrincipalName -User email@domain -AccessRights FullAccess -AutoMapping $false -ErrorAction SilentlyContinue
+            # Add 'FullAccess' permissions for a specific user or group
+            Add-MailboxPermission -Identity $UserPrincipalName -User "helpdesk@example.com" -AccessRights FullAccess -AutoMapping $false -ErrorAction Stop
             
             # Set the retention policy for the mailbox
-            $Null = Set-Mailbox -Identity $UserPrincipalName -RetentionPolicy "PKFOD 18 Month Retention Policy" -ErrorAction SilentlyContinue
+            Set-Mailbox -Identity $UserPrincipalName -RetentionPolicy "Default Retention Policy" -ErrorAction Stop
             
-            # Disable email apps for the user
-            $Null = Set-CASMailbox -Identity $UserPrincipalName -PopEnabled $false -ImapEnabled $false -ActiveSyncEnabled $false -ErrorAction SilentlyContinue
+            # Disable specific email apps for the user
+            Set-CASMailbox -Identity $UserPrincipalName -PopEnabled $false -ImapEnabled $false -ActiveSyncEnabled $false -ErrorAction Stop
             
-            Write-Host "Successfully applied mailbox permissions for: $UserPrincipalName" -ForegroundColor Green
+            Write-Host "Successfully applied mailbox settings for: $UserPrincipalName" -ForegroundColor Green
             
-            # If no errors were thrown, the script will reach this point and break the loop
+            # If no errors were thrown, break the loop
             break
         }
         catch {
-            # If an error was thrown, increment the try count and try again
             $TryCount++
             Write-Host "Attempt $TryCount of $MaxTries failed. Retrying..." -ForegroundColor Yellow
+            Start-Sleep -Seconds 30  # Wait for 30 seconds before retrying
         }
     }
     while ($TryCount -lt $MaxTries)
 
     if ($TryCount -eq $MaxTries) {
-        Write-Host "All attempts to apply mailbox permissions for: $UserPrincipalName have failed." -ForegroundColor Red
+        Write-Host "All attempts to apply mailbox settings for: $UserPrincipalName have failed." -ForegroundColor Red
+        Write-Error $_.Exception.Message
     }
-}
-
-Function Assign-PhoneNumber {
-    param(
-        $FirstName,
-        $LastName,
-        $Email,
-        $Username
-    )
-
-    Begin {
-        $Success = $False
-        $TryCount = 0
-        $MaxTries = 10
-
-        while (!($Success) -and $TryCount -le $MaxTries) {
-            try {
-                $TelephoneNumber = Get-iPilotNumber -Available -iPilotDomain nuwms00076 -Credential $Cloud |
-                Select-Object UserPrincipalName, firstname, lastname, TelephoneNumber |
-                Where-Object { $_.FirstName -eq $null } | Get-Random
-
-                $Success = $True
-            }
-            catch {
-                if ($TryCount -eq 5) {
-                    Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
-                }
-
-                $TryCount++
-            }
-        }
-    }
-
-    Process {
-        $Success = $False
-        $TryCount = 0
-
-        while (!($Success) -and $TryCount -le $MaxTries) {
-            try {
-                New-iPilotTeamsUserAssignment -UserPrincipalName $Email `
-                    -FirstName $FirstName `
-                    -LastName $LastName `
-                    -telephonenumber $TelephoneNumber.TelephoneNumber `
-                    -iPilotDomain nuwms00076 -Credential $Cloud
-
-                $P = $TelephoneNumber.TelephoneNumber
-                [String]$P = '+1 ' + $P.Substring(0, 3) + '.' + $P.Substring(3, 3) + '.' + $P.Substring(6)
-
-                $NewHire | Add-Member -NotePropertyMembers @{'PhoneNumber' = $P }
-
-                $Success = $True
-            }
-            catch {
-                if ($TryCount -eq 5) {
-                    Initialize-iPilotSession -ApiKey 'key' -Credential $Cloud
-                }
-
-                if ($TryCount -eq 10) {
-                    Remove-ADUser -Server 'HA-DC1' -Identity $Username -Confirm:$false
-                    Clear-Variable $NewHire
-
-                    Write-Color -Text "The script has done ", "$TryCount ", "tries to find the new hire: ", "$Username", " in the cloud.", "The AD Account will be deleted", " And the script will try again tomorrow" `
-                        -Color White, Yellow, White, Green, White, Red, White
-
-                    $Global:killswitchMessage += @"
-A critical step has failed after multiple attempts. The AD account $Username will be deleted, and the script will try again tomorrow. Function: Assign-PhoneNumber
-"@
-                }
-
-                $TryCount++
-            }
-        }
-    }
-
-    End {}
-}
-
-Function Email-Notification {
-
-    if ($Global:Request_OfficeE3 -gt 1) {
-        Write-Verbose -Message "Requesting OfficeE3 licenses"
-        $Total = ($Global:Request_OfficeE3 + (Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:SPE_E3" }).ActiveUnits)
-        $Message = "
-            Good day, 
-            
-            We require $Request_OfficeE3 Microsoft Office E3licenses, for a total of $total licenses
-    
-    
-            Thanks
-             "
-               
-        Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-            -To 'email@domain' `
-            -Subject 'Office365 license need to be update' `
-            -Credential $Cloud `
-            -SmtpServer smtp.office365.com `
-            -Port 587 -UseSsl `
-            -Body $Message
-    }
-    
-    
-    if ($Global:Request_TeamsPhone -gt 1 ) {
-        Write-Verbose -Message "Requesting OfficeE3 licenses"
-        $Total = ($Global:Request_TeamsPhone + (Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:MCOEV" }).ActiveUnits)
-        $Message = "
-            Good day, 
-            
-            We require $Request_TeamsPhone Microsoft  Microsft Teams Phone Standard licenses, for a total of $total licenses
-    
-    
-            Thanks
-
-            Dear IT Team,
-
-            The new hire onboarding script requires additional Microsoft Teams Phone Standard licenses to complete provisioning for new employees.
-
-            Today, the script processed new hires who need to be assigned Teams Phone licenses based on their job roles.
-
-            Unfortunately,To continue automatically assigning licenses to new hires, I am requesting an additional $Request_TeamsPhone Microsoft Teams Phone Standard licenses, bringing the total to $total.
-
-            Please let me know if you need any extra details or have any concerns with fulfilling this request. I'm happy to provide reports on current license usage and assignment.
-
-            Thank you for your assistance in ensuring we have sufficient licenses available to smoothly onboard new employees. Let me know if you have any other questions!
-
-            Regards
-
-             "
-    
-        Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-            -To 'email@domain' `
-            -Subject 'Request for Additional Microsoft Teams Phone Licenses' `
-            -Credential $Cloud `
-            -SmtpServer smtp.office365.com `
-            -Port 587 -UseSsl `
-            -Body $Message -Priority High
-    }
-    
-     
-    if ($Global:Request_Conferencing -gt 1 ) {
-        Write-Verbose -Message "Requesting OfficeE3 licenses"
-        $Total = ($Global:Request_Conferencing + (Get-MsolAccountSku | where { $_.AccountSkuId -like "OCDCrm:Microsoft_Teams_Audio_Conferencing_select_dial_out" }).ActiveUnits)
-        $Message = "
-            Good day, 
-            
-            We require $Request_Conferencing Microsoft Office E3licenses, for a total of $total licenses
-    
-    
-            Thanks
-             "
-        Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-            -To 'email@domain' `
-            -Subject 'Office365 license need to be update' `
-            -Credential $Cloud `
-            -SmtpServer smtp.office365.com `
-            -Port 587 -UseSsl `
-            -Body $Message
-    }   
-
-    # Semd email is the user was not able to be created.
-    if ($Global:killswitchMessage) {
-        Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-            -To 'email@domain' `
-            -Subject 'One of the step fail for the followin user' `
-            -Credential $Cloud `
-            -SmtpServer smtp.office365.com `
-            -Port 587 -UseSsl `
-            -Body $Global:killswitchMessage
-    }
-
-
-    $html = $Global:NewHireList | select FirstName, LastName, Email, JobTitle, Department, PhoneNumber, State, City | ConvertTo-HtmL | Out-String
-    $newhtml = $html #-replace "<td>OFFLINE</td>","<td bgcolor=#FF0000'>OFFLINE</td>" -replace "<td>ONLINE</td>","<td bgcolor=#00FF00'>ONLINE</td>"
-    Send-MailMessage -From 'automation@ocdcrm.onmicrosoft.com' `
-        -To 'NewHireLog@domain.com' `
-        -Subject 'The following newhires has been created by the newhire script' `
-        -Credential $Cloud `
-        -SmtpServer smtp.office365.com `
-        -Port 587 -UseSsl `
-        -Body $newhtml -BodyAsHtml
-
-}
-
-Function Ichannel-Account {
-    <#
-This function will create a Ichannel 'Account' for internal users by calling a SQL Query from the Icahnnel server
-
-#>
-    param(
-        [Parameter(Mandatory = $True,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [String]$cUserID, # Ichannel login user ID
-    
-        [Parameter(Mandatory = $True,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [String]$cLastName, # user's lastNmae
-  
-        [Parameter(Mandatory = $True,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [String]$cFirstName, # user's FirstName
-  
-        [Parameter(Mandatory = $True,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true)]
-        [String]$cEmail # user's Email
-    )
-  
-    # Create Ichannel account
-    Write-Color -Text "Creating Ichannel account for the user: ", "$cEmail" -Color White, Yellow
-    Invoke-Sqlcmd -Query "exec cadoc_system.dbo.spCreateInternalSubscriber 'ROOT', '$cUserID','@cPassword','$cLastName','$cFirstName','$cEmail'" `
-        -As DataSet -ServerInstance "name" -Database "cadoc_system"
-    
-}
-
-Function CreateApiContext {
-    
-    # Load required assemblies
-    $Null = [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll")
-
-    $secureString = Get-Content 'C:\Windows\E.txt' | ConvertTo-SecureString
-    $E = (New-Object System.Management.Automation.PsCredential("E", $secureString)).Password
-    $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($E)
-    $E = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($ptr)
-    # Remember to free the BSTR to avoid a memory leak
-    [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
-    $IsCentral = $true;
-    $CreateApiContext = [Pfx.Engagement.API.ApiFactory]::CreateApiContext("HA-SQL4", $IsCentral, "ADMIN", "$E")
-    $CreateApiContext
-}
-
-Function New-EngagementUser {
-    Param([Parameter(Mandatory = $True)]
-        $newHire,
-        [Parameter(Mandatory = $True)]
-        $CreateApiContext
-    )
-
-    # Load required assemblies
-    $Null = [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll")
-
-    # Retrieves all the installed license guids with their information in the given api context
-    $ILicenseApi = [Pfx.Engagement.API.ApiFactory]::CreateLicenseApi()
-    $EngagementLicenseCount = $ILicenseApi.GetAllLicenseTypes($CreateApiContext)
-
-    # Creates an instance of IStaffApi
-    $CreateStaffApi = [Pfx.Engagement.API.ApiFactory]::CreateStaffApi()
-
-    # Make sure there are suficient 'Workpaper Management' and 'Trial Balance' licenses to create the user
-    $TrialBalance = $EngagementLicenseCount | Where { $_.ProductName -like "Engagement Trial Balance" }
-    $WorkpaperManagement = $EngagementLicenseCount | Where { $_.ProductName -like "Engagement Workpaper Management" }
-    if (($TrialBalance.AvailableLicenses -gt 0) -and ($WorkpaperManagement.AvailableLicenses -gt 0)) {
-        
-        switch -regex ($NewHire.Department) {
-            "^Admin" { $DepartmentId = 1 }
-            "^Audit" { $DepartmentId = 2 }
-            "^Tax" { $DepartmentId = 3 }
-            "^Advisory" { $DepartmentId = 4 }
-            default { $DepartmentId = 0 }
-        }
-
-
-        switch -regex ($NewHire.JobTitle) {
-            "^Associate" { $RightsGroupId = 64 }
-            "^Senior" { $RightsGroupId = 65 }
-            "^Supervisor" { $RightsGroupId = 66 }
-            "^Manager" { $RightsGroupId = 66 }
-            "^Partner" { $RightsGroupId = 67 }
-            default { $RightsGroupId = 64 }
-        }
-
-        # Get new hire properties
-        $newStaffRequest = New-Object -TypeName Pfx.Engagement.API.Staff.StaffAddRequestDto -Property @{
-            RightsGroupId = $RightsGroupId
-            Active        = $true
-            FirstName     = $newHire.FirstName
-            LastName      = $newHire.LastName
-            StaffInitial  = ($newHire.FirstName[0] + $newHire.FirstName[1] + "." + $newHire.LastName[0] + $newHire.LastName[1])
-            WorkeMail     = $newHire.Email
-            MiddleName    = ""
-            Login         = $newHire.Username
-            DepartmentId  = $DepartmentId
-            StaffTitleId  = ""
-            PersonalTitle = ""
-            HomeEmail     = $newHire.Email
-            PhoneNumber   = $newHire.PersonalNumber
-            MachineName   = "HA-SQL4"
-        }
-    
-        # Create a new Engagement User
-        $staffApi = [Pfx.Engagement.API.ApiFactory]::CreateStaffApi()
-        $staffApi.Add($CreateApiContext, $newStaffRequest)
-
-        # Get the user StaffGuid
-        $GetAll = $CreateStaffApi.GetAll($CreateApiContext)
-        $NewStaff = $GetAll  | where { $_.WorkEmail -like "$($newHire.Email)" }
-
-        # Assign the user a Trial Balance license
-        $ILicenseApi.AssignLicensesToStaff($CreateApiContext, $NewStaff.StaffGuid.Guid.Guid, $TrialBalance.LicenseGuid.Guid.Guid)
-    }
-}
-    
-# ----------------------------------[  Working, and testing the following functions.]-------------------------------------
-function Username-Check {
-    <#
-    This is a PowerShell function named "Username-Check" that generates a unique email by 
-    concatenating the first character of the first name, the last name, and a domain name.
-    It checks if the email is already taken in Active Directory and, if so, 
-    tries again with a dot between the first name and last name. If both attempts fail, 
-    it returns a warning message. The function takes two mandatory string parameters: "firstName" and "lastName".
-    #>
-    [CmdletBinding()]
-    Param
-    (
-        # Param1 help description
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ValueFromRemainingArguments = $false)]
-        [String]$firstName,
-
-        # Param2 help description
-        [Parameter(Mandatory = $true,
-            ValueFromPipeline = $true,
-            ValueFromPipelineByPropertyName = $true,
-            ValueFromRemainingArguments = $false)]
-        [String]$lastName
-    )
-
-    $domain = "@domain.com"
-    $email = $firstName[0] + $lastName + $domain
-
-    # Check for unique email in AD
-    $Email1 = Get-ADObject -Filter { mail -eq $email }
-
-    if ($Email1) {
-        $email = $firstName + '.' + $lastName + $domain
-        $Email2 = Get-ADObject -Filter { mail -eq $email }
-
-        if ($Email2) {
-            Write-Warning "Cannot generate a unique email for $firstName $lastName"
-        }
-        else {
-            $email = $email
-        }
-    }
-    else {
-        $email = $email
-    }
-
-    $username, $domain = $email -split '@'
-
-    $username
-}
-
-Function Get-Domain {
-    [CmdletBinding()]
-    Param
-    (
-        # Param1 help description
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyString ()]
-        [String]$NewHire
-        
-    )
-
-    # Change the Domain base on new hire attribute
-    switch ($NewHire) {
-        "Something" { $Domain }
-        default { $Domain = '@domain.com' }
-    }
-
-}
-
-Function AssingEvolve-PhoneNumber {
-    param($NewHire)
-
-    # API endpoint URL
-    $uri = "https://ossmosis.evolveip.net/api/as/provisioning/Submission"
-
-    # API key or token for authentication
-    # Define your credentials
-    $username = "domain@domain.com"
-    $password = "mLarg9lSv3x55S."
-    $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
-
-    # Define the headers
-    $headers = @{
-        "Accept"        = "*/*"
-        "Authorization" = "Basic $base64AuthInfo"
-    }
-
-    # Functions
-    Function Select-FreeNumber {
-        <#
-   .SYNOPSIS
-   This function generates a free number within a specified range for a given location.
-
-   .PARAMETER NewHire
-   The information for the new hire.
-
-   .DESCRIPTION
-   The function takes a 'NewHire' object as a parameter. 
-   It defines an array of location data, each with location name, groupId, and a range of phone numbers.
-   It then selects the data corresponding to the NewHire's location and randomly selects a phone number within that range.
-   Finally, it creates and outputs a custom object containing the groupId and the selected phone number.
-   #>
-        param($NewHire)
-
-        # Initialize the array
-        $Table = @()
-
-        # Depending on the location, add the corresponding custom object to the array
-        switch ($NewHire.City) {
-            "Bethesda" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'lcation'
-                    groupId          = '0001027323'
-                    PhoneNumberRange = @{
-                        Start = '+1-240'
-                        End   = '+1-914'
-                    }
-                }
-            }
-            "Brooklyn" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'lcation'
-                    groupId          = '0001027459'
-                    PhoneNumberRange = @{
-                        Start = '+1-332'
-                        End   = '+1-718'
-                    }
-                }
-       
-            }
-            "Cranford" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016606'
-                    PhoneNumberRange = @{
-                        Start = '+1-908'
-                        End   = '+1-973'
-                    }
-                }
-            }
-            "Harrison" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'lcation'
-                    groupId          = '0001016600'
-                    PhoneNumberRange = @{
-                        Start = '+1-914'
-                        End   = '+1-845'
-                    }
-                }
-            }
-            "Hauppauge" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001027324'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-631'
-                    }
-                }
-            }
-            "Middletown" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001031011'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-631'
-                    }
-                }
-            }
-            "NewburghBalmville" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001027325'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-845'
-                    }
-                }
-            }
-            "NewburghFostertown" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016602'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-845'
-                    }
-                }
-            }
-            "ParkAvenue" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001027269'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-646'
-                    }
-                }
-            }
-            "Providence" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001027327'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-401'
-                    }
-                }
-            }
-            "Shelton" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001027328'
-                    PhoneNumberRange = @{
-                        Start = 'NA'
-                        End   = '+1-203'
-                    }
-                }
-            }
-            "Stamford" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016603'
-                    PhoneNumberRange = @{
-                        Start = '+1-203'
-                        End   = '+1-475'
-                    }
-                }
-            }
-            "Wethersfield" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016604'
-                    PhoneNumberRange = @{
-                        Start = '+1-203'
-                        End   = '+1-860'
-                    }
-                }
-            }
-            "WoodcliffLake" {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016608'
-                    PhoneNumberRange = @{
-                        Start = '+1-201'
-                        End   = '+1-551'
-                    }
-                }
-            }
-            default {
-                $Table += [PSCustomObject]@{
-                    Location         = 'location'
-                    groupId          = '0001016600'
-                    PhoneNumberRange = @{
-                        Start = '+1-914'
-                        End   = '+1-845'
-                    }
-                }
-            }
-        }
-
-        Function OSSmosisAssignedNumberList {
-
-            # Define the URL
-            $url = "https://ossmosis.evolveip.net/api/as/enterprise/eip-0001016600/OSSmosisAssignedNumberList"
-
-            # Define the headers
-            $headers = @{
-                "Accept"        = "*/*"
-                "Authorization" = "Basic $base64AuthInfo"
-            }
-
-            # Make the GET request
-            $response = Invoke-RestMethod -Uri $url -Method GET -Headers $headers
-
-            # Output the response
-            $response.payload.groupAssignedEntityDTOList
-        }
-        $OSSmosisAssignedNumberList = OSSmosisAssignedNumberList
-        $FreeNumber = ($OSSmosisAssignedNumberList | where { $_.status -like "open" } )
-   
-        # Retrieve the properties for the specified location
-        $LocationProperty = $Table | where { ( $_.Location -eq $NewHire.City ) -or ($_.Location -eq "Harrison") }
-
-        # Select a random phone number within the range specified for the location
-        $Random = $FreeNumber | Where-Object { ($_.phoneNumber -like "$($LocationProperty.PhoneNumberRange.Start)*") -or ($_.phoneNumber -like "$($LocationProperty.PhoneNumberRange.End)*") } | Get-Random 
-
-        # Create a custom object with the groupId and selected phone number
-        $PSCustomObject = [PSCustomObject]@{
-            groupId    = $LocationProperty.groupId
-            FreeNumber = $Random.phoneNumber
-        }
-   
-        # Return the custom object
-        $PSCustomObject
-    }
-    $FreeNumber = Select-FreeNumber -NewHire $NewHire
-
-    # Request body
-    $payload = @{
-        payload = @{
-            activatePhoneNumbers     = $false 
-            cleanupPreviousEntries   = $true
-            description              = "ON_DEMAND user provisioning for gr-0001027323" 
-            enterpriseId             = ""
-            groupId                  = ('gr-' + "$($FreeNumber.groupId)")
-            platformIdentifier       = "broadsoft-f"  
-            provisioningMode         = "ON_DEMAND"
-            provisioningRequestType  = "net.evolveip.ossmosis.entities.provisioning.user.OssmosisUsersProvisioningRequestDTO"
-            region                   = "US"
-            requestHandlerClassNames = @(
-                "net.evolveip.ossmosis.provisioning.request.handlers.users.OSSmosisUsersProvisioningAddRequestHandler"
-            )
-            scheduledRunTimeStamp    = $null
-            stopOnPreviousFailure    = $false
-            userId                   = "emial@domain.com"
-            users                    = @(
-                @{
-                    deviceType             = "Microsoft Teams - Direct Routing"
-                    invalid                = $false
-                    sipRegistrar           = ""  
-                    baseStationName        = ""
-                    countryCode            = "US" 
-                    customLineLabelId      = $null
-                    emailAddress           = "$($NewHire.Email)"
-                    enableCaribbeanDialing = $false
-                    enableSMS              = $false
-                    extension              = ""
-                    firstName              = "$($NewHire.FirstName)"
-                    internationalUser      = $false
-                    lastName               = "$($NewHire.LastName)"
-                    licenseType            = "EIPTEAMSVOICE"
-                    macAddress             = ""
-                    mobile                 = ""
-                    phoneNumber            = $FreeNumber.FreeNumber 
-                    stageAreaId            = 67950578
-                    teamsDomain            = "c1016600.teams.evolveip.net"
-                    timeZone               = @{
-                        timeZone    = "America/New_York"
-                        displayName = "(GMT-04:00) (US) Eastern Time"
-                    }
-                    userId                 = $NewHire.Username
-                    vlanId                 = ""
-                    yahooId                = ""
-                }
-            )
-        }
-    }
-
-    # Send POST request
-    $response = Invoke-RestMethod `
-        -Uri $uri `
-        -Method Post `
-        -Body ($payload | ConvertTo-Json -Depth 10) `
-        -ContentType "application/json" `
-        -Headers $headers
-
-    # Output response
-    if ($response) {
-        Grant-CsTenantDialPlan -Identity "$($NewHire.Email)" -PolicyName 'EvolveIP-TenantDialPlan'
-        Grant-CsOnlineVoiceRoutingPolicy -Identity "$($NewHire.Email)" -PolicyName 'EvolveIP-East'
-    }
-
-    $NewHire | Add-Member -NotePropertyMembers @{'PhoneNumber' = $FreeNumber.FreeNumber }
-
 }
 
 Function new-ADUserWithHomeFolder {
+    <#
+    .DESCRIPTION
+    This function creates a home folder for a new AD user and sets the appropriate permissions.
+
+    .PARAMETER Username
+    The username of the AD user for whom the home folder is being created.
+
+    .NOTES
+    This function assumes you have the necessary permissions to create folders on the file server
+    and modify AD user objects. It also assumes the AD module is loaded.
+    #>
     param($Username)
 
-    $HomeFolderPath = "\\ha-file-01.odmd.local\redirectedfolders\$username"
+    # Define the base path for home folders
+    $BaseHomeFolderPath = "\\FileServer\HomeFolders"
 
-    # Set the home directory path for the user
-    $Null = Set-ADUser $UserName -HomeDirectory $HomeFolderPath -HomeDrive "Z:"
+    # Construct the full path for the user's home folder
+    $HomeFolderPath = Join-Path -Path $BaseHomeFolderPath -ChildPath $Username
 
-    # Create the user's home folder on the share
+    # Set the home directory path for the user in AD
+    Set-ADUser $Username -HomeDirectory $HomeFolderPath -HomeDrive "H:"
 
-    $Null = New-Item -Path $HomeFolderPath -ItemType Directory -Force -ErrorAction SilentlyContinue
-    #New-Item -Path "\\ha-file-01.odmd.local\redirectedfolders\$username\Documents" -ItemType Directory -Force -ErrorAction SilentlyContinue
-    #New-Item -Path "\\ha-file-01.odmd.local\redirectedfolders\$username\Desktop" -ItemType Directory -Force -ErrorAction SilentlyContinue
-    #New-Item -Path "\\ha-file-01.odmd.local\redirectedfolders\$username\Downloads" -ItemType Directory -Force -ErrorAction SilentlyContinue
+    try {
+        # Create the user's home folder
+        New-Item -Path $HomeFolderPath -ItemType Directory -Force -ErrorAction Stop
 
-    # Grant the user permission to their home folder
-    $Acl = Get-Acl -Path $HomeFolderPath
-    $UserSID = (Get-ADUser $UserName).SID
-    $FileSystemAccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($UserSID, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-    $Acl.SetAccessRule($FileSystemAccessRule)
-    $Null = Set-Acl -Path $HomeFolderPath -AclObject $Acl
+        # Get the ACL of the new folder
+        $Acl = Get-Acl -Path $HomeFolderPath
 
+        # Get the user's SID
+        $UserSID = (Get-ADUser $Username).SID
 
-    "Creating Z folder to the user: $($NewHire.Username)"
+        # Create a new access rule granting the user full control
+        $AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            $UserSID, 
+            "FullControl", 
+            "ContainerInherit,ObjectInherit", 
+            "None", 
+            "Allow"
+        )
 
+        # Add the access rule to the ACL
+        $Acl.SetAccessRule($AccessRule)
+
+        # Apply the updated ACL to the folder
+        Set-Acl -Path $HomeFolderPath -AclObject $Acl
+
+        Write-Host "Home folder created and permissions set for user: $Username" -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Failed to create home folder or set permissions for user: $Username. Error: $_"
+    }
 }
+
 
 Function Add-ADGroups {
     <#
-    This function takes four mandatory parameters: $Username, $Office, $Title, and $Department. 
-    It then queries Active Directory for users in a specific organizational unit, filters those users by office, 
-    title, and department, groups the resulting AD groups by name and removes duplicates, 
-    and finally adds the user to each of those AD groups. 
-    The function also writes a message to the console indicating which AD groups were added to the user.
-    #>
+    .DESCRIPTION
+    This function adds a user to appropriate AD groups based on their office, title, and department.
 
-    # Define function parameters
+    .PARAMETER Username
+    The username of the AD user to be added to groups.
+
+    .PARAMETER Office
+    The office location of the user.
+
+    .PARAMETER Title
+    The job title of the user.
+
+    .PARAMETER Department
+    The department of the user.
+
+    .NOTES
+    This function assumes you have the necessary permissions to query AD and modify group memberships.
+    It also assumes the AD module is loaded.
+    #>
     Param(
         [Parameter(Mandatory = $True)]
         [String]$Username, 
@@ -1564,343 +862,243 @@ Function Add-ADGroups {
         [String]$Department
     )
 
+    # Initialize arrays to store AD users and groups
+    $ADUsers = @()
+    $ADGroups = @()
 
-    # Initialize ADusers as arrays
-    $ADusers1 = @()
-    $ADusers2 = @()
-    $ADgroups = @()
+    # Search base for AD queries
+    $SearchBase = "OU=Users,DC=contoso,DC=com"
 
+    # Query AD for users with matching attributes
+    $ADUsers += Get-ADUser -Filter {
+        (Department -eq $Department) -and 
+        (Title -eq $Title) -and 
+        (Office -eq $Office) -and 
+        (Enabled -eq $true)
+    } -SearchBase $SearchBase -Properties Department, Title, Office, MemberOf, Enabled
 
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>> [ Title ] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    # Get all users in the specified OU with the required properties and filter them by title, and department
-    $ADusers1 += Get-ADUser -Filter * `
-        -SearchBase "OU" `
-        -Properties Department, title, office, MemberOf, Enabled  -Server 'HA-DC1' | 
-    Where-Object { ($_.Department -eq $Department) -and 
-                   ($_.title -eq $Title) -and 
-                   ($_.office -eq $Office) -and 
-                   ($_.Enabled) } 
+    # Also search for users with matching Description instead of Title
+    $ADUsers += Get-ADUser -Filter {
+        (Department -eq $Department) -and 
+        (Description -eq $Title) -and 
+        (Office -eq $Office) -and 
+        (Enabled -eq $true)
+    } -SearchBase $SearchBase -Properties Department, Description, Office, MemberOf, Enabled
 
-    # Group the AD groups by name and filter out groups that the user is already a member of
-    $ADgroups += foreach ($Group in ($ADusers1.MemberOf | group)) {
-        if (($Group).Count -ge (($ADusers.Count - 1))) {
-            $Group.Group | select -Unique
+    # Identify common groups among matching users
+    $GroupCounts = $ADUsers.MemberOf | Group-Object | Where-Object { $_.Count -ge ($ADUsers.Count * 0.7) }
+    $ADGroups = $GroupCounts.Name
+
+    # Add the user to each identified group
+    foreach ($Group in $ADGroups) {
+        try {
+            Add-ADGroupMember -Identity $Group -Members $Username -ErrorAction Stop
+            Write-Host "Added $Username to group: $Group" -ForegroundColor Green
+        }
+        catch {
+            Write-Warning "Failed to add $Username to group: $Group. Error: $_"
         }
     }
 
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>> [Description] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    # Get all users in the specified OU with the required properties and filter them by title, and department
-    $ADusers2 += Get-ADUser -Filter * `
-        -SearchBase "OU" `
-        -Properties Department, Description, office, MemberOf, Enabled  -Server 'HA-DC1' | 
-    Where-Object { ($_.Department -like $Department) -and 
-                   ($_.Description -like $Title) -and 
-                   ($_.office -like $Office) -and 
-                   ($_.Enabled) } 
-
-    # Group the AD groups by name and filter out groups that the user is already a member of
-    $ADgroups += foreach ($Group in ($ADusers2.MemberOf | group)) {
-        if (($Group).Count -ge (($ADusers.Count - 1))) {
-            $Group.Group | select -Unique
-        }
-    }     
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>> [] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    $ADgroups = $ADgroups | select -Unique
-
-    # Add the user to each AD group
-    $ADgroups | Where-Object { $_ } | ForEach-Object { Add-ADGroupMember -Identity $_ -Members $Username -Server 'HA-DC1' } 
-
-    if ($ADgroups) { 
-        # for the moment, the ADGroups will be set to pending manual by default intill the function is more reliable 
-        #  $NewHire | Add-Member -NotePropertyMembers @{'ADGroups' = 'Yes'; } 
+    if ($ADGroups.Count -eq 0) {
+        Write-Warning "No common groups found for user with Office: $Office, Title: $Title, Department: $Department"
     }
-
-    # Write a message to the console indicating which AD groups were added to the user
-    Write-Host "Adding AD groups to the user: $Username" -ForegroundColor Yellow
 }
+
 
 Function AD-changes {
+    <#
+    .DESCRIPTION
+    This function applies various Active Directory changes for a new user account.
+
+    .PARAMETER NewHire
+    An object containing the new hire's information.
+
+    .NOTES
+    This function assumes you have the necessary permissions to modify AD objects and that the AD module is loaded.
+    #>
     param($NewHire)
 
-    $IndiaDenyGroup = ("AD group")
+    # Define generic groups
+    $DefaultGroups = @("All Users", "New Hires")
+    $SpecialGroups = @("External Access")
 
-    $DefaultGroups = ("AD group")
-
-    if ($NewHire.Status -eq "Contractor/Consultant") {
-        foreach ($group in $IndiaDenyGroup) {
-            Add-ADGroupMember -Identity $group `
-                -Members $NewHire.Username `
-                -Server 'HA-DC1' `
-                -confirm:$false
+    # Add user to default groups
+    foreach ($group in $DefaultGroups) {
+        try {
+            Add-ADGroupMember -Identity $group -Members $NewHire.Username -ErrorAction Stop
+            Write-Host "Added $($NewHire.Username) to group: $group" -ForegroundColor Green
+        }
+        catch {
+            Write-Warning "Failed to add $($NewHire.Username) to group: $group. Error: $_"
         }
     }
 
-    foreach ($group in $DefaultGroups) {
-        Add-ADGroupMember -Identity $group `
-            -Members $NewHire.Username `
-            -Server 'HA-DC1' `
-            -confirm:$false
+    # Add user to special groups based on status
+    if ($NewHire.Status -eq "Contractor") {
+        foreach ($group in $SpecialGroups) {
+            try {
+                Add-ADGroupMember -Identity $group -Members $NewHire.Username -ErrorAction Stop
+                Write-Host "Added $($NewHire.Username) to special group: $group" -ForegroundColor Green
+            }
+            catch {
+                Write-Warning "Failed to add $($NewHire.Username) to special group: $group. Error: $_"
+            }
+        }
     }
 
-    if ($NewHire.Status -eq "Employee (Full or Part Time)") {
-        Set-ADUser -Identity $NewHire.Username `
-            -Server 'name' `
-            -Replace @{'extensionAttribute3' = $NewHire.CellPhoneNumber } `
-            -OfficePhone $NewHire.CellPhoneNumber -ErrorAction SilentlyContinue
+    # Set additional AD attributes
+    try {
+        $adUserParams = @{
+            Identity = $NewHire.Username
+            Replace  = @{
+                'customAttribute1' = $NewHire.CellPhoneNumber
+                'customAttribute2' = $NewHire.Department
+                'customAttribute3' = $NewHire.JobTitle
+            }
+        }
+        Set-ADUser @adUserParams -ErrorAction Stop
+        Write-Host "Updated custom attributes for $($NewHire.Username)" -ForegroundColor Green
+    }
+    catch {
+        Write-Warning "Failed to update custom attributes for $($NewHire.Username). Error: $_"
     }
 
-    # Coppy-paste AD groups from users with the same Office, Jobtitle, Department
-    Add-ADGroups -Username $NewHire.Username `
-        -Office (AD-Office -Location $NewHire.City) `
-        -Title $NewHire.JobTitle -Department $NewHire.Department -ErrorAction SilentlyContinue 
+    # Set SMTP address
+    $smtpAddress = "SMTP:" + $NewHire.Username + "@contoso.com"
+    try {
+        Set-ADUser -Identity $NewHire.Username -Add @{ProxyAddresses = $smtpAddress} -ErrorAction Stop
+        Write-Host "Set SMTP address for $($NewHire.Username)" -ForegroundColor Green
+    }
+    catch {
+        Write-Warning "Failed to set SMTP address for $($NewHire.Username). Error: $_"
+    }
 
-    
-    # Add, and remove Mobile phone
+    # Add user to groups based on attributes
+    Add-ADGroups -Username $NewHire.Username -Office $NewHire.Office -Title $NewHire.JobTitle -Department $NewHire.Department
+
+    # Set logon script
+    Set-LogonScript -NewHire $NewHire
+
+    # Manage phone number visibility
     Manage-ADUserMobilePhone -UserPrincipalName $NewHire.Username -MobilePhone $NewHire.PersonalNumber -showNumber $NewHire.ShowNumber
 
-    # Set SMTP Address
-    $SMTPpkfod = ('SMTP:' + $NewHire.Username + '@domain.COM')
-    Set-ADUser -Identity $NewHire.Username -add @{"proxyaddresses" = $SMTPpkfod } -Server 'name'
-
-    # Static Groups
-    #if($NewHire.City -eq ){}
-
-    # Add the LogonScript
-    if (!($NewHire.State -eq 'State')) { Set-LogonScript -NewHire $NewHire }
-
-    # Add Certifications to the AD account
-    if ($NewHire.Certification) { Set-ADUser -Identity $NewHire.Username -add @{"ExtensionAttribute2" = $NewHire.Certification } -Server 'name' }
-   
+    # Add certifications if applicable
+    if ($NewHire.Certification) {
+        try {
+            Set-ADUser -Identity $NewHire.Username -Add @{CustomAttribute4 = $NewHire.Certification} -ErrorAction Stop
+            Write-Host "Added certification information for $($NewHire.Username)" -ForegroundColor Green
+        }
+        catch {
+            Write-Warning "Failed to add certification information for $($NewHire.Username). Error: $_"
+        }
+    }
 }
-
-# ----------------------------------[                                               ]-------------------------------------
-
-<# New updates list for version 1.1
-    Function updated 
-    * Username-Check; maked so this function also lookis for contacts username. If a contact is using the username, firstname.lastname will be use.
-    * Add-ADGroups; this function will also look for jobs titles in the description of users.
-    * AD-Office; users from "South Africa", "Mumbai", "Philippines" will now say 'international' in the attribute in AD.
-    * Set-LogonScript; users with 'international' in the office attribute in AD will now get assign the 'HRlogon-65.bat' logon script.
-
-    New Function
-    * AssingEvolve-PhoneNumber; this function uses API to connect to Evolve phone systems. it looks for free numbers base on the user's location.
-      it then assigns those free numebrs.
-    * new-ADUserWithHomeFolde; it create a folder in '\ha-file-01.odmd.local\redirectedfolders' with the permission for the user.
-      it also updates the AD attibute Profile > home folder with the path.
-#>
-
-
-#test 
 
 # ----------------------------------[     Controller     ]-------------------------------------#
 
-
 Function NewHire {
-    cls
-    # Get a list of Engagement
+    <#
+    .DESCRIPTION
+    This function orchestrates the new hire onboarding process, including retrieving new hire information,
+    checking licenses, creating AD accounts, and performing various setup tasks.
 
-    # Get the sharepoint list
-    $PnPListItems = (Get-PnPListItem -List "New Hire Script Input").FieldValues 
-    $Global:NewHireList = foreach ($Item in $PnPListItems) {
-    
-        $property = @{
-            ID                = $Item.ID
-            FirstName         = $Item.field_5
-            LastName          = $Item.field_6
-            Middle            = $Item.field_7
-            StartDate         = ($Item.field_8.ToString("MM/dd/yyyy"))
-            State             = $Item.field_9
-            City              = $Item.City
-            Status            = $item.field_18
-            Department        = $Item.field_19
-            JobTitle          = $Item.JobTitle
-            ApprovalStatus    = $Item.ApprovalStatus
-            Expedate          = $Item.Expedite
-            PersonalNumber    = $Item.PhoneNumber
-            ShowNumber        = $Item.ShowNumber
-            EmployeeID        = $Item.EmployeeID
-            Certification     = $Item.Certification
-            ReturningEmployee = $Item.ReturningEmployee
+    .NOTES
+    This function assumes you have the necessary permissions and connections to SharePoint,
+    Exchange Online, and other relevant services.
+    #>
+
+    # Clear the console for better readability
+    Clear-Host
+
+    # Retrieve new hire information from SharePoint
+    $NewHireListItems = Get-PnPListItem -List "New Hire Onboarding List"
+    $Global:NewHireList = foreach ($Item in $NewHireListItems) {
+        [PSCustomObject]@{
+            ID                = $Item["ID"]
+            FirstName         = $Item["FirstName"]
+            LastName          = $Item["LastName"]
+            StartDate         = $Item["StartDate"].ToString("MM/dd/yyyy")
+            Department        = $Item["Department"]
+            JobTitle          = $Item["JobTitle"]
+            Status            = $Item["EmploymentStatus"]
+            Office            = $Item["Office"]
+            ApprovalStatus    = $Item["ApprovalStatus"]
+            Expedite          = $Item["Expedite"]
+            PersonalNumber    = $Item["PersonalPhoneNumber"]
+            ShowNumber        = $Item["DisplayPhoneNumber"]
+            EmployeeID        = $Item["EmployeeID"]
+            Certification     = $Item["Certification"]
+            ReturningEmployee = $Item["ReturningEmployee"]
         }
-    
-        $Object = New-Object -TypeName PSobject -Property $property
-        $Object
-    } 
-    
-    # Iterate through each user object in the $Global:NewHireList variable
-    $Global:NewHireList = foreach ($user in $Global:NewHireList) {
-        # Convert the StartDate property from a string to a datetime object
-        $startDate = [datetime]$user.StartDate
+    }
 
-        # Calculate the number of days between the current date and the StartDate
+    # Filter new hires based on start date and approval status
+    $Global:NewHireList = $Global:NewHireList | Where-Object {
+        $startDate = [datetime]$_.StartDate
         $daysUntilStart = (New-TimeSpan -Start (Get-Date) -End $startDate).Days
-
-        # Check if the StartDate is less than 21 days in the future and greater than or equal to the current date,
-        # and the ApprovalStatus is "Pending to Process"
-        if ((($daysUntilStart -ge 0) -and 
-             ($daysUntilStart -lt 21) -and 
-             ($user.ApprovalStatus -eq "Approved")) -or
-             (($user.Expedate -eq "Yes") -and 
-             ($user.ApprovalStatus -eq "Approved")) -and 
-             (!($user.ReturningEmployee -eq "Yes"))) {
-            # If the conditions are met, print the user object to the console
-            $user
-        }
+        (($daysUntilStart -ge 0 -and $daysUntilStart -lt 21) -or $_.Expedite -eq "Yes") -and
+        $_.ApprovalStatus -eq "Approved" -and
+        $_.ReturningEmployee -ne "Yes"
     }
-   
 
-    # Get License count
-    "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[                 Geting License count                               ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "; License-Count
+    # Check and allocate licenses
+    Write-Host "Checking license availability..." -ForegroundColor Cyan
+    License-Count
+    $Global:NewHireList = $Global:NewHireList | ForEach-Object { License-check -NewHireList $_ }
 
+    # Create AD accounts
+    Write-Host "Creating AD accounts..." -ForegroundColor Cyan
+    $Global:NewHireList = $Global:NewHireList | ForEach-Object { AD-Account -NewHire $_ }
 
-    # Iterate through each user object in the $Global:NewHireList variable check for licenses 
-    "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[         Iterate through each user for available licenses           ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "; $Global:NewHireList = foreach ($NewHire in $Global:NewHireList) { License-check -NewHireList $NewHire }
-
-
-    # Create the AD Accounts
-    "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[               Creating the AD Accounts                             ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "; $Global:NewHireList = foreach ($NewHire in $Global:NewHireList) {
-        AD-Account -NewHire $NewHire; #Write-Host "The AD account has been created for $($NewHire.firstname)"
-    }
-    
-
-    # Assign the users to Microsoft 365 E3 License, and Waiting for Mailboxes for be create
-    "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[ Waiting for AD account to be in the cloud  ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "; foreach ($NewHire in $Global:NewHireList) { Waitfor-sycn -Email $NewHire.Email -status $NewHire.Status -Username $NewHire.Username }  
-    
-
-    "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[              Waiting for Mailbox to be created                     ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "; foreach ($NewHire in $Global:NewHireList) { Waitfor-Mailbox -Email $NewHire.Email -Username $Username }  
-
-    # Create CreateApiContext
-    $CreateApiContext = CreateApiContext
-
+    # Sync AD accounts to Azure AD and assign licenses
+    Write-Host "Syncing to Azure AD and assigning licenses..." -ForegroundColor Cyan
     foreach ($NewHire in $Global:NewHireList) {
-        "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<[             AD Changes, Mailbox Changes, IC creation               ]>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    "
-        # Change AD address, and front desk number base un office location - Disabled
-        change-physicaladdress -Username $NewHire.Username
+        Waitfor-sync -Email $NewHire.Email -status $NewHire.Status -Username $NewHire.Username
+    }
 
-        # Set some mailbox settings - Disabled
-        MailboxSettings -UserPrincipalName $NewHire.Email
+    # Wait for mailboxes to be created
+    Write-Host "Waiting for mailboxes to be created..." -ForegroundColor Cyan
+    foreach ($NewHire in $Global:NewHireList) {
+        Waitfor-Mailbox -Email $NewHire.Email -Username $NewHire.Username
+    }
 
-        # Create IChannel account  
-        if (!(($NewHire.Department -eq "Admin - Marketing") -or ($NewHire.Department -eq "Admin - Human Resources"))) {
-            #   Ichannel-Account -cUserID $NewHire.Username -cLastName $NewHire.LastName -cFirstName $NewHire.FirstName -cEmail $NewHire.Email
-        }
+    # Perform additional setup tasks for each new hire
+    foreach ($NewHire in $Global:NewHireList) {
+        Write-Host "Performing additional setup for $($NewHire.FirstName) $($NewHire.LastName)..." -ForegroundColor Cyan
 
-        # If the user is from Boston/woburm, Assing a phone number  - Disabled
-        if (($NewHire.State -eq "Massachusetts") -and ($NewHire.Status -eq "Employee (Full or Part Time)")) {
-            IF ($NewHire.Status -eq "Employee (Full or Part Time)") {
-                #   Assign-PhoneNumber -FirstName $NewHire.FirstName -LastName $NewHire.LastName -Email $NewHire.Email -username $NewHire.Username
-            }
-        }
-
-        # If the user is not from MA, and is a full time, assign evolve phone number.
-        if ((!($NewHire.State -eq "Massachusetts")) -and ($NewHire.Status -eq "Employee (Full or Part Time)")) {
-            "Create a phone number on Evolce"
-            AssingEvolve-PhoneNumber -NewHire $NewHire
-        }
-
-        # Apply minor AD changes to the user
+        # Update AD attributes and group memberships
         AD-changes -NewHire $NewHire
 
-        # Create Engagement account
-        If (!($NewHire.Department -like "Admin*") -or ($NewHire.Department -like "H*")) {
-            # "Creating Engagement account for $($NewHire.Username)"
-            # New-EngagementUser -newHire $NewHire -CreateApiContext $CreateApiContext
+        # Configure mailbox settings
+        MailboxSettings -UserPrincipalName $NewHire.Email
+
+        # Create home folder (if applicable)
+        if ($NewHire.Office -ne "Remote") {
+            new-ADUserWithHomeFolder -Username $NewHire.Username
         }
 
-        # Create Home Drive folder
-        if (!($NewHire.State -eq "Massachusetts")) { new-ADUserWithHomeFolder -Username $NewHire.Username }
-         
-        #  something something add later.
-        $Null = Set-PnPListItem -List "New Hire Script Input" -Identity $newHire.ID -Values @{"ApprovalStatus" = "Pending Flow";
-            "Username"                                                                                         = $NewHire.Email
+        # Update SharePoint list status
+        Set-PnPListItem -List "New Hire Onboarding List" -Identity $NewHire.ID -Values @{
+            "Status" = "Provisioned"
+            "Email"  = $NewHire.Email
         }
-        $sharepointFlowList = Add-PnPListItem -List "New Hire Script Flow" -Values @{'NewHire' = $NewHire.Email 
-            'Date'                                                                             = $NewHire.StartDate
-            'HomeOffice'                                                                       = $NewHire.City
-            'Department'                                                                       = $NewHire.Department
-        }
-        if ($NewHire.ADGroups -eq 'Yes') {
-            $Null = Set-PnPListItem -List "New Hire Script flow" `
-                -Identity  $sharepointFlowList.ID `
-                -Values @{'ADGroups' = 'Completed' }
+
+        # Add to onboarding workflow list
+        Add-PnPListItem -List "Onboarding Workflow" -Values @{
+            'NewHire'    = $NewHire.Email
+            'StartDate'  = $NewHire.StartDate
+            'Department' = $NewHire.Department
+            'Office'     = $NewHire.Office
         }
     }
 
-    #Send emails
-    #  Email-Notification
+    # Send notification emails
+    Email-Notification
 }
 
-Function Remove-MFAGroup {
 
-    # Get the sharepoint list
-    $PnPListItems = (Get-PnPListItem -List "New Hire Script Input").FieldValues 
-    $MFANewHireList = foreach ($Item in $PnPListItems) {
-    
-        $property = @{
-            ID        = $Item.ID
-            StartDate = ($Item.field_8.ToString("MM/dd/yyyy"))
-            Username  = $Item.Username
-        }
-    
-        $Object = New-Object -TypeName PSobject -Property $property
-        $Object
-    } 
-
-    foreach ($NewHire in $MFANewHireList) {
-    
-        # Check if Username property of NewHire object is not null or empty
-        if (![string]::IsNullOrEmpty($NewHire.Username)) {
-    
-            # Convert StartDate to a DateTime object if it's not already
-            $startDate = $NewHire.StartDate -as [DateTime]
-    
-            # Check if StartDate is not null and is equal to yesterday's date
-            if (($startDate).AddDays(-2).ToString("MM/dd/yyyy") -eq (Get-Date).ToString("MM/dd/yyyy")) {
-                
-                # Remove the user to 'MFA Exclusion Group'
-                Remove-AzureADGroupMember -ObjectId '28ade99f-e283-4442-96ec-2437279e8d5f' `
-                    -MemberId (Get-AzureADUser -ObjectId $NewHire.Username).ObjectId
-
-            }
-        }   
-    }
-
-    $AzureG = "group", 'group'
-    foreach ($G in $AzureG) {
-
-        # Retrieves all members of the specified Azure AD group
-        $AzureADGroupMember = Get-AzureADGroupMember -ObjectId "$G" -All $true
-
-        # For each user in the Azure AD group
-        foreach ($Useremail in $AzureADGroupMember) {
-
-            # Get the UserPrincipalName of the current user
-            $email = $Useremail.UserPrincipalName
-    
-            # Get the AD user based on UserPrincipalName that are disabled and are in the 'Disabled' Organizational Unit
-            $ADUser = Get-ADUser -Filter "UserPrincipalName -eq '$email'" | 
-            where { ($_.Enabled -like "false") -and ($_.DistinguishedName -like "*Disabled*") }
-        
-            # If such a user exists
-            if (($ADUser.Enabled -like "false") -and ($ADUser.DistinguishedName -like "*Disabled*") ) {
-
-                # Remove the user from the 'Standard Azure group'
-                Remove-AzureADGroupMember -ObjectId "$G" `
-                    -MemberId (Get-AzureADUser -ObjectId $ADUser.UserPrincipalName).ObjectId
-            }
-            #>
-        }
-    }
-}
 
 #Run the scripts
 PKFOD-NewHire
-Remove-MFAGroup
 Start-Sleep -Seconds (30)
