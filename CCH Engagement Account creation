@@ -1,0 +1,60 @@
+﻿# Load required assemblies
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.Api\v4.0_2022.1.1.1__f020f9ad409246db\Pfx.TrialBalance.Api.dll"
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.CommonLibrary\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.CommonLibrary.dll"
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.Infrastructure\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.Infrastructure.dll"
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.BL\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.TrialBalance.BL.dll"
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll"
+Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.KnowledgeCoach.Interface\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.KnowledgeCoach.Interface.dll"
+
+# Load required assemblies
+[System.Reflection.Assembly]::LoadFrom('C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.Api\v4.0_2022.1.1.1__f020f9ad409246db\Pfx.TrialBalance.Api.dll')
+[System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.CommonLibrary\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.CommonLibrary.dll")
+[System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.Infrastructure\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.Infrastructure.dll")
+[System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.BL\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.TrialBalance.BL.dll")
+[System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll")
+[System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.KnowledgeCoach.Interface\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.KnowledgeCoach.Interface.dll")
+
+
+# Set IsCentral to true
+$IsCentral = $true
+
+# Create an instance of ApiFactory
+$apiFactory = New-Object Pfx.TrialBalance.API.ApiFactory
+$apiContext = $apiFactory.CreateApiContext([Environment]::MachineName, $IsCentral, "admin", "NA")
+
+# Create API context
+$apiContext = [Pfx.Engagement.API.ApiFactory]::CreateApiContext($engagementOfficeServer, $username, "NA")
+
+# Create IStaffApi
+$staffApi = $apiFactory.CreateStaffApi()
+
+# Create FileRoomApi
+$fileRoomApi = $apiFactory.CreateFileRoomApi()
+
+# Get office server by staff member's OfficeServerGuid
+$officeServer = $fileRoomApi.GetOfficeServer($apiContext, $staffMember.OfficeServerGuid)
+
+# Create new StaffAddRequestDto
+$newStaffRequest = New-Object Pfx.Engagement.API.Staff.Dto.StaffAddRequestDto -Property @{
+    RightsGroupId = 1
+    PersonalTitle = "Mrs."
+    FirstName = "Elizabeth"
+    MiddleName = ""
+    LastName = "Smith"
+    StaffInitial = "ES"
+    HomeEmail = "someemail@aol.com"
+    WorkeMail = "elizabeth.smith@wolterskluwer.com"
+    Login = "ESMITH"
+    PhoneNumber = "316-867-5309"
+    Active = $true
+    DepartmentId = 1
+    StaffTitleId = 2
+    MachineName = "UNIVAC"
+    HomeCfrServer = $officeServer
+}
+
+# Add new staff member
+$staffApi.Add($apiContext, $newStaffRequest)
+
+# Dispose the apiContext when finished
+$apiContext.Dispose()
