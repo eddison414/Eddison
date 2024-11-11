@@ -1,4 +1,9 @@
-﻿# Load required assemblies
+# This script manages staff members in a Trial Balance system using various Wolters Kluwer APIs
+# It demonstrates loading required assemblies and creating a new staff member
+
+#region Assembly Loading
+# Method 1: Loading assemblies using Add-Type
+# These DLLs are part of the Trial Balance and Engagement system
 Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.Api\v4.0_2022.1.1.1__f020f9ad409246db\Pfx.TrialBalance.Api.dll"
 Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.CommonLibrary\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.CommonLibrary.dll"
 Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.Infrastructure\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.Infrastructure.dll"
@@ -6,54 +11,66 @@ Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.BL\v
 Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll"
 Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.KnowledgeCoach.Interface\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.KnowledgeCoach.Interface.dll"
 
-# Load required assemblies
+# Method 2: Loading assemblies using System.Reflection
+# This is an alternative method to load the same assemblies
+# Both methods are included, though one would typically choose one approach
 [System.Reflection.Assembly]::LoadFrom('C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.Api\v4.0_2022.1.1.1__f020f9ad409246db\Pfx.TrialBalance.Api.dll')
 [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.CommonLibrary\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.CommonLibrary.dll")
 [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.Infrastructure\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.Infrastructure.dll")
 [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.TrialBalance.BL\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.TrialBalance.BL.dll")
 [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.Engagement.API\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.Engagement.API.dll")
 [System.Reflection.Assembly]::LoadFrom("C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.KnowledgeCoach.Interface\v4.0_2022.1.1.1__21b98a3ae763e7ad\Pfx.KnowledgeCoach.Interface.dll")
+#endregion
 
-
-# Set IsCentral to true
+#region Initialize API Components
+# Set central server flag
 $IsCentral = $true
 
-# Create an instance of ApiFactory
+# Initialize the main API factory for Trial Balance operations
 $apiFactory = New-Object Pfx.TrialBalance.API.ApiFactory
 
-# Create API context
+# Create API context with engagement office server details
+# Note: $engagementOfficeServer and $username should be defined before running this script
 $apiContext = [Pfx.Engagement.API.ApiFactory]::CreateApiContext($engagementOfficeServer, $username, "NA")
 
-# Create IStaffApi
+# Create staff management API interface
 $staffApi = $apiFactory.CreateStaffApi()
 
-# Create FileRoomApi
+# Create file room API interface for office server operations
 $fileRoomApi = $apiFactory.CreateFileRoomApi()
+#endregion
 
-# Get office server by staff member's OfficeServerGuid
+#region Office Server Configuration
+# Retrieve office server information using staff member's office server GUID
+# Note: $staffMember should be defined before running this script
 $officeServer = $fileRoomApi.GetOfficeServer($apiContext, $staffMember.OfficeServerGuid)
+#endregion
 
-# Create new StaffAddRequestDto
+#region Create New Staff Member
+# Create a new staff member request object with detailed information
 $newStaffRequest = New-Object Pfx.Engagement.API.Staff.Dto.StaffAddRequestDto -Property @{
-    RightsGroupId = 1
-    PersonalTitle = "Mrs."
-    FirstName = "Elizabeth"
-    MiddleName = ""
-    LastName = "Smith"
-    StaffInitial = "ES"
-    HomeEmail = "someemail@aol.com"
-    WorkeMail = "elizabeth.smith@wolterskluwer.com"
-    Login = "ESMITH"
-    PhoneNumber = "316-867-5309"
-    Active = $true
-    DepartmentId = 1
-    StaffTitleId = 2
-    MachineName = "UNIVAC"
-    HomeCfrServer = $officeServer
+    RightsGroupId = 1                                        # Access rights group identifier
+    PersonalTitle = "Mrs."                                   # Staff member's title
+    FirstName = "Elizabeth"                                  # First name
+    MiddleName = ""                                         # Middle name (empty in this case)
+    LastName = "Smith"                                      # Last name
+    StaffInitial = "ES"                                     # Staff initials for system identification
+    HomeEmail = "someemail@aol.com"                         # Personal email address
+    WorkeMail = "elizabeth.smith@wolterskluwer.com"         # Work email address
+    Login = "ESMITH"                                        # System login username
+    PhoneNumber = "316-867-5309"                           # Contact phone number
+    Active = $true                                          # Account status (active)
+    DepartmentId = 1                                        # Department identifier
+    StaffTitleId = 2                                        # Staff title/position identifier
+    MachineName = "UNIVAC"                                  # Computer name
+    HomeCfrServer = $officeServer                           # Assigned office server
 }
 
-# Add new staff member
+# Add the new staff member to the system using the staff API
 $staffApi.Add($apiContext, $newStaffRequest)
+#endregion
 
-# Dispose the apiContext when finished
+#region Cleanup
+# Properly dispose of the API context to free resources
 $apiContext.Dispose()
+#endregion
