@@ -20,7 +20,6 @@ $IsCentral = $true
 
 # Create an instance of ApiFactory
 $apiFactory = New-Object Pfx.TrialBalance.API.ApiFactory
-$apiContext = $apiFactory.CreateApiContext([Environment]::MachineName, $IsCentral, "admin", "NA")
 
 # Create API context
 $apiContext = [Pfx.Engagement.API.ApiFactory]::CreateApiContext($engagementOfficeServer, $username, "NA")
