@@ -1,0 +1,131 @@
+# New Hire Automation Script Documentation
+
+## ⚠️ IMPORTANT WARNING
+
+This documentation describes a **sample** automation script intended as a reference implementation. This script CANNOT be used as-is in your environment. To implement this in your organization:
+
+1. **Environment-Specific Updates Required**: 
+   - Server names
+   - Domain names
+   - File paths
+   - Group names
+   - Security policies
+   
+2. **Security Review Needed**:
+   - Credential handling
+   - Permission levels
+   - Compliance requirements
+   
+3. **Integration Requirements**:
+   - Your specific Active Directory structure
+   - Email system configuration
+   - SharePoint/Teams setup
+   - Phone system integration
+   
+4. **Testing Required**:
+   - Sandbox environment testing
+   - User acceptance testing
+   - Security testing
+   - Error handling verification
+
+Please engage your IT team or qualified consultants to properly adapt this script for your environment.
+
+## Overview
+
+The New Hire Automation Script is a tool designed to automate the IT onboarding process for new employees. This document explains how the script works and what it does, written for those who may not be familiar with PowerShell programming.
+
+## What Does the Script Do?
+
+The script automates these key tasks when onboarding a new employee:
+
+1. Creates user accounts in Active Directory (AD)
+2. Sets up email accounts in Microsoft 365
+3. Assigns proper licenses for software and services
+4. Creates and configures necessary folders
+5. Sets up phone systems (if applicable)
+6. Adds users to appropriate security groups
+7. Sends notification emails about the process
+
+## How Does It Work?
+
+### 1. Getting Started
+- The script reads new hire information from a SharePoint list
+- It only processes approved new hires who are starting within the next 21 days
+- Expedited cases can be processed immediately regardless of start date
+
+### 2. License Management
+Before creating accounts, the script:
+- Checks available licenses for various Microsoft services
+- Verifies there are enough licenses for the new hire
+- Tracks license usage and requests more if running low
+
+### 3. Account Creation Process
+The script then:
+- Generates a unique username
+- Creates the AD account with basic information
+- Sets up the Microsoft 365 account
+- Creates an Exchange mailbox
+- Configures user permissions and settings
+
+### 4. Group Membership
+The script automatically:
+- Adds users to standard groups based on their department
+- Assigns security permissions based on role
+- Sets up email distribution lists
+- Configures team access in Microsoft Teams
+
+### 5. Additional Setup
+Depending on the employee type and location, the script also:
+- Creates home folders for document storage
+- Sets up phone numbers (for specific offices)
+- Configures logon scripts
+- Sets physical address information
+
+### 6. Completion and Notification
+Finally, the script:
+- Updates SharePoint lists with completion status
+- Sends confirmation emails to IT and relevant managers
+- Creates a record of all actions taken
+
+## Common Questions
+
+### How long does it take?
+Typically 15-30 minutes per user, but can vary based on system response times.
+
+### What if something fails?
+The script includes error handling and will:
+- Retry failed operations multiple times
+- Log any errors that occur
+- Send notifications about failures
+- Clean up partial account creation if necessary
+
+### Can it handle multiple new hires?
+Yes, the script can process multiple new hires in one run.
+
+## Important Notes
+
+1. **Do Not Modify**: The script contains carefully calibrated settings. Changes should only be made by authorized IT staff.
+
+2. **Monitoring**: While automated, the process should still be monitored for completion.
+
+3. **Manual Tasks**: Some tasks may still require manual intervention, such as:
+   - Setting up specialized software
+   - Configuring custom permissions
+   - Handling unique situations
+
+4. **Support**: Contact IT support if you notice any issues with the onboarding process.
+
+## When to Use Manual Process Instead
+
+Use manual process when:
+- The new hire has unique requirements not covered by standard automation
+- The script encounters persistent errors
+- Emergency access is needed outside normal onboarding process
+- Custom configurations are required that aren't part of standard setup
+
+## Getting Help
+
+For assistance with the new hire process:
+1. Check this documentation first
+2. Contact IT Support for script-related issues
+3. Escalate to IT Management for process exceptions
