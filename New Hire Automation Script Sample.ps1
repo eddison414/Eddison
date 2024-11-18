@@ -93,7 +93,11 @@ Function required-Modules {
     
 # ----------------------------------[ Login into the require enviroment]-------------------------------
 
-# N/A
+<# 
+N/A
+The way we login into the different enviroments will change depending on the company. 
+This section will need to be customized for each organization's specific needs
+#>
     
 # ----------------------------------[     Functions     ]-------------------------------------
   
