@@ -301,12 +301,79 @@ To add functionality:
 3. Include in main workflow where needed
 4. Document new capabilities
 
-## Support Contact
+## Here's a step-by-step breakdown of the script's functionality:
 
-For assistance:
-1. Review documentation
-2. Contact IT Support
-3. Escalate to IT Management
+Initial Setup
 
----
+
+Checks and installs required PowerShell modules
+Establishes required connections to various services
+
+
+License Management
+
+
+Counts available licenses for different Microsoft 365 products
+Checks if sufficient licenses are available for each new hire
+Tracks license requirements and availability
+
+
+User Account Creation
+
+
+Retrieves new hire information from SharePoint
+Filters new hires based on start date and approval status
+Generates unique usernames using first/last name
+Creates AD accounts with proper attributes
+
+
+Mailbox and Communication Setup
+
+
+Waits for AD sync to Azure AD
+Creates Exchange Online mailboxes
+Configures mailbox permissions and settings
+Sets up email forwarding and access rights
+
+
+File System and Access
+
+
+Creates home folders for users
+Sets appropriate permissions on folders
+Configures logon scripts based on department/role
+Maps network drives
+
+
+Group Membership and Permissions
+
+
+Adds users to appropriate AD groups based on:
+
+Department
+Office location
+Job title
+Employment status
+
+
+Handles special access requirements
+
+
+Contact Information Management
+
+
+Updates physical address information based on office location
+Manages phone number visibility settings
+Sets up office contact details
+
+
+Final Steps
+
+
+Updates SharePoint list status
+Adds users to onboarding workflow
+Sends notification emails
+Performs final synchronization checks
+
+The script includes extensive error handling, retry logic for failed operations, and logging throughout the process.
 
