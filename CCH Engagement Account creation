@@ -1,3 +1,4 @@
+IMPORTANT!; This is just sample script to use as a guide and is not mean to be use in a real IT production Inviroment!!
 
 #region Assembly Loading
 # Method 1: Loading assemblies using Add-Type
@@ -36,9 +37,9 @@ Add-Type -Path "C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Pfx.KnowledgeCoach.In
 # - Available licenses for Trial Balance and Workpaper Management products
 #
 # .NOTES
-# Author: [Your Name]
+# Author: [Eddison Razon]
 # Version: 1.0
-# Last Modified: [Date]
+# Last Modified: [11/26/2024]
 # Requires PowerShell 5.1 or later
 #
 
