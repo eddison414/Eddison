@@ -2,20 +2,13 @@
 <#
 # Important Notice Regarding Script Usage
 
-Please be advised that this script has been specifically developed for our unique IT infrastructure. It has been meticulously customized to align with the specific requirements, configurations, and security protocols of our system. Consequently, this script is not a generic solution and should be treated with caution.
-
-## Customization and Specificity
-
-The script incorporates:
-- Custom API calls tailored to our specific systems
-- Hardcoded paths and server names unique to our environment
-- Security measures and access controls specific to our organization
-- Integration with our particular Active Directory structure and naming conventions
-- Customized error handling for our known system quirks and limitations
+Please be advised that this script has been specifically developed for a 'SAMPLE' IT Enviroment. 
+This script is not a generic solution and should be treated with caution.
 
 ## Risks of Misapplication
 
-It is essential to understand that due to these customizations, the script is not designed for universal application. Attempting to implement it in a different IT environment may:
+It is essential to understand that due to each company different IT customizations, the script is not designed for universal application. This script is just mean to be use as a sample.
+Attempting to implement it in a different IT environment may:
 - Not yield the intended results
 - Potentially lead to system incompatibilities or operational issues
 - Cause unintended data modifications or loss
@@ -24,7 +17,7 @@ It is essential to understand that due to these customizations, the script is no
 
 ## Strong Recommendation
 
-I strongly advise against using this script in any IT setting other than the one it was specifically created for. If you are considering adapting this script for your environment:
+I strongly advise against using this script in any IT setting. If you are considering adapting this script for your environment:
 
 1. Thoroughly review and understand each component of the script
 2. Identify all organization-specific elements that would need modification
