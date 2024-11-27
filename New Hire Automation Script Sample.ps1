@@ -1,4 +1,3 @@
-﻿﻿
 <#
 # Important Notice Regarding Script Usage
 
@@ -326,7 +325,6 @@ function AD-Office {
     $Office
 }
 
-
 Function Waitfor-sync {
     <#
     .DESCRIPTION
@@ -400,7 +398,6 @@ Function Waitfor-sync {
         }
     }
 }
-
 
 Function License-Count {
     <#
@@ -636,7 +633,6 @@ Function Username-Check {
     return $username
 }
 
-
 function change-physicaladdress {
     <#
     .DESCRIPTION
@@ -709,8 +705,6 @@ function change-physicaladdress {
         Write-Error "Failed to update physical address for user: $Username. Error: $_"
     }
 }
-
-
 
 Function MailboxSettings {
     <#
@@ -991,7 +985,9 @@ Function AD-changes {
     }
 }
 
+
 # ----------------------------------[     Controller     ]-------------------------------------#
+
 
 Function NewHire {
     <#
@@ -1002,34 +998,45 @@ Function NewHire {
     .NOTES
     This function assumes you have the necessary permissions and connections to SharePoint,
     Exchange Online, and other relevant services.
+    All the 'Write-Host' commands are been use just for testing sake to see what the script is doing at the moment.
+    In a real Production Environment this script would be running through Task Scheduler in the background, and no one would be looking
+    at the Host display. In a real enviroment, you would need to remove or add '#' to all Write-Host commands.
     #>
 
     # Clear the console for better readability
-    Clear-Host
+    Clear-Host  
 
-    # Retrieve new hire information from SharePoint
+    # Step 1: Data Collection from SharePoint
+    # Retrieves all items from the "New Hire Onboarding List" and converts them into a custom PowerShell object
+    # This makes the data easier to work with throughout the script
     $NewHireListItems = Get-PnPListItem -List "New Hire Onboarding List"
     $Global:NewHireList = foreach ($Item in $NewHireListItems) {
+        # Creates a structured object with all relevant new hire information
+        # Using global scope to make it accessible across different functions
         [PSCustomObject]@{
-            ID                = $Item["ID"]
-            FirstName         = $Item["FirstName"]
-            LastName          = $Item["LastName"]
-            StartDate         = $Item["StartDate"].ToString("MM/dd/yyyy")
-            Department        = $Item["Department"]
-            JobTitle          = $Item["JobTitle"]
-            Status            = $Item["EmploymentStatus"]
-            Office            = $Item["Office"]
-            ApprovalStatus    = $Item["ApprovalStatus"]
-            Expedite          = $Item["Expedite"]
-            PersonalNumber    = $Item["PersonalPhoneNumber"]
-            ShowNumber        = $Item["DisplayPhoneNumber"]
-            EmployeeID        = $Item["EmployeeID"]
-            Certification     = $Item["Certification"]
-            ReturningEmployee = $Item["ReturningEmployee"]
+            ID                = $Item["ID"]                    # Unique identifier for the list item
+            FirstName         = $Item["FirstName"]            # Employee's first name
+            LastName          = $Item["LastName"]             # Employee's last name
+            StartDate         = $Item["StartDate"].ToString("MM/dd/yyyy")  # Formatted start date
+            Department        = $Item["Department"]           # Department assignment
+            JobTitle         = $Item["JobTitle"]             # Job title/position
+            Status           = $Item["EmploymentStatus"]     # Current employment status
+            Office           = $Item["Office"]               # Office location or "Remote"
+            ApprovalStatus   = $Item["ApprovalStatus"]      # Approval status of the hire
+            Expedite         = $Item["Expedite"]            # Flag for expedited processing
+            PersonalNumber   = $Item["PersonalPhoneNumber"] # Personal contact number
+            ShowNumber       = $Item["DisplayPhoneNumber"]  # Whether to display phone in directory
+            EmployeeID       = $Item["EmployeeID"]          # Employee identification number
+            Certification    = $Item["Certification"]       # Required certifications
+            ReturningEmployee = $Item["ReturningEmployee"]  # Flag for returning employees
         }
     }
 
-    # Filter new hires based on start date and approval status
+    # Step 2: Filter Active New Hires
+    # Filters the list to only include relevant new hires based on:
+    # - Start date within next 21 days OR marked as expedite
+    # - Approved status
+    # - Not a returning employee
     $Global:NewHireList = $Global:NewHireList | Where-Object {
         $startDate = [datetime]$_.StartDate
         $daysUntilStart = (New-TimeSpan -Start (Get-Date) -End $startDate).Days
@@ -1038,49 +1045,55 @@ Function NewHire {
         $_.ReturningEmployee -ne "Yes"
     }
 
-    # Check and allocate licenses
+    # Step 3: License Management
+    # Checks available licenses and allocates them appropriately
     Write-Host "Checking license availability..." -ForegroundColor Cyan
-    License-Count
+    License-Count  # Presumably checks available license count
     $Global:NewHireList = $Global:NewHireList | ForEach-Object { License-check -NewHireList $_ }
 
-    # Create AD accounts
+    # Step 4: Account Creation
+    # Creates Active Directory accounts for each new hire
     Write-Host "Creating AD accounts..." -ForegroundColor Cyan
     $Global:NewHireList = $Global:NewHireList | ForEach-Object { AD-Account -NewHire $_ }
 
-    # Sync AD accounts to Azure AD and assign licenses
+    # Step 5: Azure AD Sync and License Assignment
+    # Ensures AD accounts are synced to Azure AD and assigns appropriate licenses
     Write-Host "Syncing to Azure AD and assigning licenses..." -ForegroundColor Cyan
     foreach ($NewHire in $Global:NewHireList) {
         Waitfor-sync -Email $NewHire.Email -status $NewHire.Status -Username $NewHire.Username
     }
 
-    # Wait for mailboxes to be created
+    # Step 6: Mailbox Creation and Configuration
+    # Waits for Exchange Online mailboxes to be created and available
     Write-Host "Waiting for mailboxes to be created..." -ForegroundColor Cyan
     foreach ($NewHire in $Global:NewHireList) {
         Waitfor-Mailbox -Email $NewHire.Email -Username $NewHire.Username
     }
 
-    # Perform additional setup tasks for each new hire
+    # Step 7: Individual Setup Tasks
+    # Performs additional configuration tasks for each new hire
     foreach ($NewHire in $Global:NewHireList) {
         Write-Host "Performing additional setup for $($NewHire.FirstName) $($NewHire.LastName)..." -ForegroundColor Cyan
 
-        # Update AD attributes and group memberships
+        # Updates AD attributes and group memberships
         AD-changes -NewHire $NewHire
 
-        # Configure mailbox settings
+        # Configures Exchange Online mailbox settings
         MailboxSettings -UserPrincipalName $NewHire.Email
 
-        # Create home folder (if applicable)
+        # Creates home folder for non-remote employees
         if ($NewHire.Office -ne "Remote") {
             new-ADUserWithHomeFolder -Username $NewHire.Username
         }
 
-        # Update SharePoint list status
+        # Step 8: SharePoint Updates
+        # Updates the status in the original SharePoint list
         Set-PnPListItem -List "New Hire Onboarding List" -Identity $NewHire.ID -Values @{
             "Status" = "Provisioned"
             "Email"  = $NewHire.Email
         }
 
-        # Add to onboarding workflow list
+        # Adds the new hire to the onboarding workflow list for tracking
         Add-PnPListItem -List "Onboarding Workflow" -Values @{
             'NewHire'    = $NewHire.Email
             'StartDate'  = $NewHire.StartDate
@@ -1089,12 +1102,7 @@ Function NewHire {
         }
     }
 
-    # Send notification emails
+    # Step 9: Notification
+    # Sends appropriate notification emails to relevant parties
     Email-Notification
 }
-
-
-
-#Run the scripts
-NewHire
-Start-Sleep -Seconds (30)
