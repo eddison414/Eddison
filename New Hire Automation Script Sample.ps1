@@ -1001,6 +1001,7 @@ Function NewHire {
     All the 'Write-Host' commands are been use just for testing sake to see what the script is doing at the moment.
     In a real Production Environment this script would be running through Task Scheduler in the background, and no one would be looking
     at the Host display. In a real enviroment, you would need to remove or add '#' to all Write-Host commands.
+    YES, you could and lilekly should use 'Write-Warning', but I prefer 'Write-Host'
     #>
 
     # Clear the console for better readability
