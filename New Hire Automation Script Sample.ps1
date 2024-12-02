@@ -1028,7 +1028,6 @@ Function NewHire {
             PersonalNumber   = $Item["PersonalPhoneNumber"] # Personal contact number
             ShowNumber       = $Item["DisplayPhoneNumber"]  # Whether to display phone in directory
             EmployeeID       = $Item["EmployeeID"]          # Employee identification number
-            Certification    = $Item["Certification"]       # Required certifications
             ReturningEmployee = $Item["ReturningEmployee"]  # Flag for returning employees
         }
     }
